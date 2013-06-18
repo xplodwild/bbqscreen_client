@@ -1,0 +1,80 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+  <head>
+    <meta content="text/html; charset=ISO-8859-1"
+      http-equiv="Content-Type">
+    <title>How to use QTFFmpegWrapper</title>
+  </head>
+  <body>
+    <h1>How to use QTFFmpegWrapper</h1>
+    <h2>General instructions</h2>
+    <ol>
+      <li>Create a QT project in the usual way</li>
+      <li>Copy the directory QTFFmpegWrapper into your project</li>
+      <li>Edit your project .pro file: </li>
+      <ol>
+        <li>copy at the end the content of config.pro,</li>
+        <li>and modify the path for the QTFFmpegWrapper directory, the
+          FFmpeg import libraries, and the FFmpeg includes</li>
+      </ol>
+      <li>Make sure the FFmpeg dynamic link libraries are available in
+        your
+        path - otherwise the program will crash upon start</li>
+    </ol>
+    <h2>Notes for Linux<br>
+    </h2>
+    The FFmpeg import libraries and FFmpeg includes are in their usual
+    locations - these path may be left empty in the .pro file.<br>
+    Also, the FFmpeg dynamic link libaries are likely already in the
+    path.<br>
+    <h2>Notes for Windows<br>
+    </h2>
+    The current version uses the zeranoe ffmpeg builds under windows: <a
+      href="http://ffmpeg.zeranoe.com/builds/">http://ffmpeg.zeranoe.com/builds/</a><br>
+    For convenience we provide for download the ffmpeg libs matching the
+    wrapper code.<br>
+    <h3>Older releases</h3>
+    Initial releases used a custom-compiled ffmpeg, following the
+    instructions given at <a
+      href="http://ffmpeg.arrozcru.org/wiki/index.php">http://ffmpeg.arrozcru.org/wiki/index.php</a><br>
+    <br>
+    You will need to install an msys+mingw build system. Follow the
+    instructions carefully, in particular "Building FFmpeg SVN dlls". As
+    of
+    09.01.2010, compilation has been successful using gcc 4.2.1-sjlj and
+    the FFmpeg SVN revision 20736 (2009-12-05). Compilation with gcc
+    3.4.5
+    did not succeed.<br>
+    <br>
+    Once FFmpeg is compiled and installed:<br>
+    <ul>
+      <li>The FFmpeg dll are in C:\msys\local\bin (libavcodec,
+        libavutil,
+        libavdevice, libavformat, libswscale). These are the dynamic
+        libraries.
+        They must be available in your path. Alternatively copy them in
+        your
+        application Debug or Release directory where your executable is
+        compiled.</li>
+      <li>The FFmpeg .dll.a files are in C:\msys\local\lib. These are
+        the
+        import libraries. Set the path in the .pro file to where they
+        are
+        located.</li>
+      <li>The FFmpeg includs are in C:\msys\local\include. However, some
+        include files are not automatically installed when doing 'make
+        install'. For convenience, the required FFmpeg include files are
+        also
+        provided in the QTFFmpeg directory</li>
+    </ul>
+    For convenience, pre-compiled FFmpeg libraries are provided in
+    ffmpeg_lib_win32. Copy these files or set path to these according to
+    the instructions above. The required FFmpeg includes are in
+    QTFFmpegWrapper.<br>
+    <h2>Example</h2>
+    In example/ we provide a simple video encoder and decoder
+    demonstrating
+    how to use QTFFmpeg.<br>
+    <br>
+  </body>
+</html>

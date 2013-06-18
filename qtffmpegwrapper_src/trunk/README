@@ -1,0 +1,39 @@
+	QTFFmpegWrapper - QT FFmpeg Wrapper Class 
+	Copyright (C) 2009-2012:
+			Daniel Roggen, droggen@gmail.com			
+			
+	All rights reserved.
+
+
+
+History
+-------
+
+17.03.2012:
+	- New API encodeImagePts to set the presentation time stamp of a frame. This allows to create variable frame rate videos. See the example.
+
+21.09.2011:
+	- Updated to FFmpeg git-a254452 2011-09-19, win32 binary from http://ffmpeg.zeranoe.com/builds/ 
+	- Minor change to QVideoDecoder.cpp, QVideoEncoder.cpp to adapt to the new FFmpeg version
+	- QVideoEncoder now allows to specify the video fps (previously fixed to 25)
+
+V 1.01 - 23.03.2010: Added QVideoDecoder::getVideoLengthMs
+
+V 1.00 - 01.01.2010: Basic functionality
+
+
+License
+-------
+
+Modified BSD license
+
+
+Dependencies
+------------
+
+- FFmpeg libraries
+
+
+
+
+
