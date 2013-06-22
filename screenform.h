@@ -79,7 +79,7 @@ public:
 	QPoint getScreenSpacePoint(int x, int y);
 
 #ifdef __APPLE__
-    bool nativeEvent(const QByteArray& eventType, void* message, long* result);
+	bool nativeEvent(const QByteArray& eventType, void* message, long* result);
 #endif
 
 private slots:
@@ -110,6 +110,9 @@ private:
 
 	QStreamDecoder mDecoder;
 	bool mFuckingStop;
+
+	QTime mTimeSinceLastTouchEvent;
+	QByteArray mTouchEventPacket;
 };
 
 #endif // SCREENFORM_H

@@ -157,6 +157,8 @@ void ScreenForm::connectTo(const QString &host)
 		ui->lblFps->setText("");
 		ui->lblFps->setVisible(false);
 	}
+
+	mTimeSinceLastTouchEvent.restart();
 }
 //----------------------------------------------------
 void ScreenForm::setQuality(bool high)
@@ -176,7 +178,7 @@ void ScreenForm::processPendingDatagrams()
 		return;
 
 	int currentSocket = 0;
-    const int headerSize = 6;
+	const int headerSize = 6;
 
 	while (mTcpSocket.bytesAvailable() > 0)
 	{
@@ -204,7 +206,7 @@ void ScreenForm::processPendingDatagrams()
 			orientation = bytesToUInt8(mBytesBuffer, 1);
 			frameSize = bytesToUInt32(mBytesBuffer, 2);
 
-            //qDebug() << "Frame is " << frameSize << " bytes (prot " << protVersion << " ori " << orientation << ")";
+			//qDebug() << "Frame is " << frameSize << " bytes (prot " << protVersion << " ori " << orientation << ")";
 
 			if (frameSize > mBytesBuffer.size()-headerSize)
 			{
@@ -214,7 +216,7 @@ void ScreenForm::processPendingDatagrams()
 
 			mBytesBuffer = mBytesBuffer.remove(0,headerSize);
 
-            if (mDecoder.decodeFrame((unsigned char*)mBytesBuffer.data(), frameSize))
+			if (mDecoder.decodeFrame((unsigned char*)mBytesBuffer.data(), frameSize))
 			{
 				QImage img = mDecoder.getLastFrame();
 				mRotationAngle = orientation * (-90) + mOrientationOffset;
@@ -308,33 +310,42 @@ void ScreenForm::timerEvent(QTimerEvent *evt)
 	ui->lblDisplay->clear();
 	ui->lblDisplay->setPixmap(mLastPixmap.front());
 	mLastPixmap.pop_front();
+
+	if (mTimeSinceLastTouchEvent.elapsed() > 33 && mTouchEventPacket.size() > 0)
+	{
+		mTcpSocket.write(mTouchEventPacket);
+		mTcpSocket.flush();
+		mTouchEventPacket.clear();
+
+		mTimeSinceLastTouchEvent.restart();
+	}
 }
 //----------------------------------------------------
 #if defined(__APPLE__)
 bool ScreenForm::nativeEvent(const QByteArray& eventType, void* message, long* result)
 {
-    EventRef* event = reinterpret_cast<EventRef*>(message);
-    uint32_t keyCode;
+	EventRef* event = reinterpret_cast<EventRef*>(message);
+	uint32_t keyCode;
 
-    switch (GetEventClass(*event)) {
-    case kEventRawKeyDown:
-        qDebug() << "key down mac";
-        GetEventParameter(*event, kEventParamKeyCode, typeUInt32, NULL, sizeof(keyCode), NULL, &keyCode);
-        qDebug() << keyCode;
-        break;
+	switch (GetEventClass(*event)) {
+	case kEventRawKeyDown:
+		qDebug() << "key down mac";
+		GetEventParameter(*event, kEventParamKeyCode, typeUInt32, NULL, sizeof(keyCode), NULL, &keyCode);
+		qDebug() << keyCode;
+		break;
 
-    case kEventRawKeyUp:
-        qDebug() << "key up mac";
-        GetEventParameter(*event, kEventParamKeyCode, typeUInt32, NULL, sizeof(keyCode), NULL, &keyCode);
-        qDebug() << keyCode;
-        break;
+	case kEventRawKeyUp:
+		qDebug() << "key up mac";
+		GetEventParameter(*event, kEventParamKeyCode, typeUInt32, NULL, sizeof(keyCode), NULL, &keyCode);
+		qDebug() << keyCode;
+		break;
 
-    default:
-        qDebug() << "event: " << GetEventClass(*event);
-        break;
-    }
+	default:
+		qDebug() << "event: " << GetEventClass(*event);
+		break;
+	}
 
-    return QWidget::nativeEvent(eventType, message, result);
+	return QWidget::nativeEvent(eventType, message, result);
 }
 #endif
 //----------------------------------------------------
@@ -353,7 +364,7 @@ void ScreenForm::keyReleaseEvent(QKeyEvent *evt)
 #if defined(_WIN32) || defined(_WIN64)
 			sendKeyboardInput(false, evt->nativeScanCode());
 #elif defined(__APPLE__)
-            sendKeyboardInput(false, evt->key());
+			sendKeyboardInput(false, evt->key());
 #else
 #error "Unsupported keyboard platform"
 #endif
@@ -374,10 +385,10 @@ void ScreenForm::keyPressEvent(QKeyEvent *evt)
 		if (!mCtrlDown)
 		{
 			// Route the key to the server
-#if defined(_WIN32) || defined(_WIN64)
-            sendKeyboardInput(false, evt->nativeScanCode());
+#if defined(_WIN32) || defined(_WIN64) || defined(__linux) || defined(__unix) || defined(__posix)
+			sendKeyboardInput(true, evt->nativeScanCode());
 #elif defined(__APPLE__)
-            sendKeyboardInput(false, evt->key());
+			sendKeyboardInput(true, evt->key());
 #else
 #error "Unsupported keyboard platform"
 #endif
@@ -502,7 +513,7 @@ void ScreenForm::sendKeyboardInput(bool down, uint32_t keyCode)
 	packet.append(down ? '\x01' : '\x00');
 	packet.append(numberToBytes(keyCode, 4));
 
-    qDebug() << "Keyboard pressed: " << keyCode;
+	qDebug() << "Keyboard pressed: " << keyCode;
 
 	mTcpSocket.write(packet);
 	mTcpSocket.flush();
@@ -519,8 +530,8 @@ void ScreenForm::sendTouchInput(TouchEventType type, uint8_t finger, uint16_t x,
 	packet.append(numberToBytes(x, 2));
 	packet.append(numberToBytes(y, 2));
 
-	mTcpSocket.write(packet);
-	mTcpSocket.flush();
+	mTouchEventPacket = packet;
+	// Will be sent in timerEvent
 }
 //----------------------------------------------------
 QByteArray ScreenForm::numberToBytes(unsigned int value, int size)
