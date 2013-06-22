@@ -6,7 +6,15 @@
 #include <QImage>
 #include <stdint.h>
 
+#ifdef NEW_FFMPEG_API
+namespace ffmpeg {
+extern "C" {
+#include <ffmpeg.h>
+}
+}
+#else
 #include "QTFFmpegWrapper/ffmpeg.h"
+#endif
 
 class QStreamDecoder : public QObject
 {
@@ -26,15 +34,15 @@ public:
 	QImage getLastFrame() const;
 
 protected:
-	ffmpeg::AVCodec* mCodec;
-	ffmpeg::AVCodecContext* mCodecCtx;
-	ffmpeg::AVPacket mPacket;
-	ffmpeg::AVFrame* mPicture;
-	ffmpeg::AVFrame* mPictureRGB;
+    ffmpeg::AVCodec* mCodec;
+    ffmpeg::AVCodecContext* mCodecCtx;
+    ffmpeg::AVPacket mPacket;
+    ffmpeg::AVFrame* mPicture;
+    ffmpeg::AVFrame* mPictureRGB;
 	uint8_t* mRGBBuffer;
 
 	QImage mLastFrame;
-	ffmpeg::SwsContext* mConvertCtx;
+    ffmpeg::SwsContext* mConvertCtx;
 };
 
 

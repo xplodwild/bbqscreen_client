@@ -2,10 +2,11 @@
 #define SCREENFORM_H
 
 #include <QtWidgets/QWidget>
-#include <QtNetwork/QTCpSocket>
+#include <QtNetwork/QTcpSocket>
 #include <QTime>
 #include <QPainter>
 #include <QBuffer>
+#include <QLabel>
 #include "QStreamDecoder.h"
 
 #define FPS_AVERAGE_SAMPLES 50
@@ -76,6 +77,10 @@ public:
 	void sendTouchInput(TouchEventType type, uint8_t finger, uint16_t x, uint16_t y);
 
 	QPoint getScreenSpacePoint(int x, int y);
+
+#ifdef __APPLE__
+    bool nativeEvent(const QByteArray& eventType, void* message, long* result);
+#endif
 
 private slots:
 	void processPendingDatagrams();

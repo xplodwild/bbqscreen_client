@@ -9,10 +9,12 @@ message("You are running qmake on a generated .pro file. This may not work!")
 
 HEADERS += ./stdafx.h \
     ./screenform.h \
-    ./mainwindow.h
+    ./mainwindow.h \
+    ./QStreamDecoder.h
 SOURCES += ./main.cpp \
     ./mainwindow.cpp \
     ./screenform.cpp \
+    ./QStreamDecoder.cpp \
     ./stdafx.cpp
 FORMS += ./mainwindow.ui \
     ./screenform.ui
