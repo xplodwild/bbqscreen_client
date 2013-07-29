@@ -1,3 +1,21 @@
+/**
+ * Copyright (C) 2013 Guillaume Lesniak
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation; either version 2
+ * of the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+ */
+
 #include "stdafx.h"
 #include "screenform.h"
 #include "ui_screenform.h"
@@ -80,7 +98,7 @@ ScreenForm::ScreenForm(MainWindow* win, QWidget *parent) :
 	mParentWindow(win),
 	mOrientationOffset(0),
 	mShowFps(false),
-	mFuckingStop(false),
+	mReallyStop(false),
 	mCtrlDown(false),
 	mIsMouseDown(false)
 {
@@ -174,7 +192,7 @@ void ScreenForm::setShowFps(bool show)
 //----------------------------------------------------
 void ScreenForm::processPendingDatagrams()
 {
-	if (!isVisible() || !ui || mFuckingStop)
+	if (!isVisible() || !ui || mReallyStop)
 		return;
 
 	int currentSocket = 0;
@@ -182,7 +200,7 @@ void ScreenForm::processPendingDatagrams()
 
 	while (mTcpSocket.bytesAvailable() > 0)
 	{
-		if (!isVisible() || !ui || mFuckingStop)
+		if (!isVisible() || !ui || mReallyStop)
 			return;
 #ifdef PROFILING
 		int timeSinceLastFrame = mFrameTimer.elapsed();
@@ -240,7 +258,7 @@ void ScreenForm::processPendingDatagrams()
 				timeSinceLastFrame = mFrameTimer.elapsed();
 				qDebug() << "Decoded in " << timeSinceLastFrame << " ms";
 #endif
-				if (!isVisible() || !ui || mFuckingStop)
+				if (!isVisible() || !ui || mReallyStop)
 					return;
 
 				if (mShowFps)
@@ -260,7 +278,7 @@ void ScreenForm::processPendingDatagrams()
 //----------------------------------------------------
 void ScreenForm::onSocketStateChanged()
 {
-	if (mIsConnecting || !isVisible() || !ui || mFuckingStop)
+	if (mIsConnecting || !isVisible() || !ui || mReallyStop)
 		return;
 
 	if (mTcpSocket.state() == QAbstractSocket::UnconnectedState)
@@ -297,7 +315,7 @@ void ScreenForm::onSocketStateChanged()
 //----------------------------------------------------
 void ScreenForm::timerEvent(QTimerEvent *evt)
 {
-	if (mFuckingStop)
+	if (mReallyStop)
 		return;
 
 	if (mLastPixmap.size() == 0)
@@ -425,7 +443,7 @@ void ScreenForm::keyPressEvent(QKeyEvent *evt)
 //----------------------------------------------------
 void ScreenForm::mousePressEvent(QMouseEvent *evt)
 {
-	if (evt->button() == Qt::LeftButton)
+	if (evt->button() == Qt::LeftButton || evt->button() == Qt::RightButton)
 	{
 		mIsMouseDown = true;
 		float posX = evt->x();
@@ -436,13 +454,18 @@ void ScreenForm::mousePressEvent(QMouseEvent *evt)
 		posX = posX * ((float) width() / (float) imgSz.width());
 		
 		QPoint pos = getScreenSpacePoint(posX, posY);
-		sendTouchInput(TET_DOWN, 0, pos.x(), pos.y());
+
+		if (evt->button() == Qt::LeftButton) {
+			sendTouchInput(TET_DOWN, 0, pos.x(), pos.y());
+		} else {
+			sendTouchInput(TET_DOWN, 1, pos.x() + 30, pos.y() + 30);
+		}
 	}
 }
 //----------------------------------------------------
 void ScreenForm::mouseReleaseEvent(QMouseEvent *evt)
 {
-	if (evt->button() == Qt::LeftButton)
+	if (evt->button() == Qt::LeftButton || evt->button() == Qt::RightButton)
 	{
 		mIsMouseDown = false;
 		float posX = evt->x();
@@ -453,7 +476,12 @@ void ScreenForm::mouseReleaseEvent(QMouseEvent *evt)
 		posX = posX * ((float) width() / (float) imgSz.width());
 
 		QPoint pos = getScreenSpacePoint(posX, posY);
-		sendTouchInput(TET_UP, 0, pos.x(), pos.y());
+
+		if (evt->button() == Qt::LeftButton) {
+			sendTouchInput(TET_UP, 0, pos.x(), pos.y());
+		} else {
+			sendTouchInput(TET_UP, 1, pos.x(), pos.y());
+		}
 	}
 }
 //----------------------------------------------------
@@ -501,7 +529,7 @@ void ScreenForm::closeEvent(QCloseEvent *evt)
 	mParentWindow->show();
 	QWidget::closeEvent(evt);
 	mParentWindow->notifyScreenClose(this);
-	mFuckingStop = true;
+	mReallyStop = true;
 }
 //----------------------------------------------------
 void ScreenForm::sendKeyboardInput(bool down, uint32_t keyCode)
