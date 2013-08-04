@@ -8,7 +8,6 @@ CONFIG += debug
 DEFINES += QT_DLL QT_NETWORK_LIB QT_WIDGETS_LIB
 INCLUDEPATH += ./GeneratedFiles \
     . \
-    ./QTFFmpegWrapper \
     ./GeneratedFiles/Debug \
     $(QTDIR)/../qtmultimedia/include/QtMultimedia \
     $(QTDIR)/../qtmultimedia/include
@@ -26,10 +25,11 @@ include(BBQScreenClient2.pri)
 LIBS += -lavutil \
     -lavcodec \
     -lavformat \
-    -lswscale
+    -lswscale \
+    -lz
 
 # Add the path
-LIBS += -L$$FFMPEG_LIBRARY_PATH
+LIBS += -L/usr/local/lib
 
 # Requied for some C99 defines
 DEFINES += __STDC_CONSTANT_MACROS
