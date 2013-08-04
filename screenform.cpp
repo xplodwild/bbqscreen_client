@@ -379,7 +379,7 @@ void ScreenForm::keyReleaseEvent(QKeyEvent *evt)
 		if (!mCtrlDown)
 		{
 			// Route the key to the server
-#if defined(_WIN32) || defined(_WIN64)
+#if defined(_WIN32) || defined(_WIN64) || defined(__linux) || defined(__unix) || defined(__posix)
 			sendKeyboardInput(false, evt->nativeScanCode());
 #elif defined(__APPLE__)
 			sendKeyboardInput(false, evt->key());
