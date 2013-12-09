@@ -208,7 +208,7 @@ void ScreenForm::processPendingDatagrams()
 		mFrameTimer.restart();
 #endif
 
-		//qDebug() << "Has packet of " << mTcpSocket.bytesAvailable() << " bytes";
+		qDebug() << "Has packet of " << mTcpSocket.bytesAvailable() << " bytes";
 		// Read the first pending packet
 		mBytesBuffer.append(mTcpSocket.readAll());
 
@@ -318,18 +318,18 @@ void ScreenForm::timerEvent(QTimerEvent *evt)
 	if (mReallyStop)
 		return;
 
-	if (mLastPixmap.size() == 0)
-		return;
+	if (mLastPixmap.size() > 0)
+	{
+		while (mLastPixmap.size() >= 2)
+			mLastPixmap.pop_front();
 
-	while (mLastPixmap.size() >= 3)
+		// Display next frame
+		ui->lblDisplay->clear();
+		ui->lblDisplay->setPixmap(mLastPixmap.front());
 		mLastPixmap.pop_front();
+	}
 
-	// Display next frame
-	ui->lblDisplay->clear();
-	ui->lblDisplay->setPixmap(mLastPixmap.front());
-	mLastPixmap.pop_front();
-
-	if (mTimeSinceLastTouchEvent.elapsed() > 33 && mTouchEventPacket.size() > 0)
+	if (mTimeSinceLastTouchEvent.elapsed() > 16 && mTouchEventPacket.size() > 0)
 	{
 		mTcpSocket.write(mTouchEventPacket);
 		mTcpSocket.flush();
@@ -545,6 +545,7 @@ void ScreenForm::sendKeyboardInput(bool down, uint32_t keyCode)
 
 	mTcpSocket.write(packet);
 	mTcpSocket.flush();
+	qApp->processEvents();
 }
 //----------------------------------------------------
 void ScreenForm::sendTouchInput(TouchEventType type, uint8_t finger, uint16_t x, uint16_t y)
