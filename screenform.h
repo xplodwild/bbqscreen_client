@@ -92,8 +92,8 @@ public:
 	void setQuality(bool high);
 	void setShowFps(bool show);
 
-	void sendKeyboardInput(bool down, uint32_t keyCode);
-	void sendTouchInput(TouchEventType type, uint8_t finger, uint16_t x, uint16_t y);
+	void sendKeyboardInput(bool down, unsigned int keyCode);
+	void sendTouchInput(TouchEventType type, unsigned char finger, unsigned short x, unsigned short y);
 
 	QPoint getScreenSpacePoint(int x, int y);
 

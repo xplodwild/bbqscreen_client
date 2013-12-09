@@ -118,7 +118,7 @@ bool QStreamDecoder::decodeFrame(unsigned char* bytes, int size)
 				if (mRGBBuffer)
 					delete[] mRGBBuffer;
 
-				mRGBBuffer = new uint8_t[numBytes];
+				mRGBBuffer = new unsigned char[numBytes];
 
 				// Assign appropriate parts of buffer to image planes in mPictureRGB
 				avpicture_fill((ffmpeg::AVPicture *)mPictureRGB, mRGBBuffer, ffmpeg::PIX_FMT_RGB24,

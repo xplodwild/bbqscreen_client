@@ -320,7 +320,7 @@ void ScreenForm::timerEvent(QTimerEvent *evt)
 
 	if (mLastPixmap.size() > 0)
 	{
-		while (mLastPixmap.size() >= 2)
+		while (mLastPixmap.size() >= 3)
 			mLastPixmap.pop_front();
 
 		// Display next frame
@@ -532,7 +532,7 @@ void ScreenForm::closeEvent(QCloseEvent *evt)
 	mReallyStop = true;
 }
 //----------------------------------------------------
-void ScreenForm::sendKeyboardInput(bool down, uint32_t keyCode)
+void ScreenForm::sendKeyboardInput(bool down, unsigned int keyCode)
 {
 	if (mTcpSocket.state() != QAbstractSocket::ConnectedState) return;
 
@@ -548,7 +548,7 @@ void ScreenForm::sendKeyboardInput(bool down, uint32_t keyCode)
 	qApp->processEvents();
 }
 //----------------------------------------------------
-void ScreenForm::sendTouchInput(TouchEventType type, uint8_t finger, uint16_t x, uint16_t y)
+void ScreenForm::sendTouchInput(TouchEventType type, unsigned char finger, unsigned short x, unsigned short y)
 {
 	if (mTcpSocket.state() != QAbstractSocket::ConnectedState) return;
 

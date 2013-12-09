@@ -57,7 +57,7 @@ protected:
     ffmpeg::AVPacket mPacket;
     ffmpeg::AVFrame* mPicture;
     ffmpeg::AVFrame* mPictureRGB;
-    uint8_t* mRGBBuffer;
+    unsigned char* mRGBBuffer;
 
     QImage mLastFrame;
     ffmpeg::SwsContext* mConvertCtx;
