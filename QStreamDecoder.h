@@ -22,12 +22,12 @@
 #include <QIODevice>
 #include <QFile>
 #include <QImage>
-#include <stdint.h>
 
 #ifdef NEW_FFMPEG_API
 namespace ffmpeg {
 extern "C" {
-#include <ffmpeg.h>
+#include <libavcodec/avcodec.h>
+#include <libswscale/swscale.h>
 }
 }
 #else
