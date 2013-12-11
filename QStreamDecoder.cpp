@@ -32,7 +32,8 @@ QStreamDecoder::QStreamDecoder(bool isAudio) :
 	mPictureRGB(nullptr),
 	mRGBBuffer(nullptr),
 	mConvertCtx(nullptr),
-	mIsAudio(isAudio)
+	mIsAudio(isAudio),
+	mBuffered(false)
 {
 
 }
@@ -121,7 +122,6 @@ void QStreamDecoder::initialize()
 //------------------------------------------
 void QStreamDecoder::process()
 {
-	qDebug() << "Stream PROCESS START";
 	bool result = false;
 
 	mMutex.lock();
@@ -142,7 +142,6 @@ void QStreamDecoder::process()
 	mInput = NULL;
 
 	emit decodeFinished(result, mIsAudio);
-	qDebug() << "Stream PROCESS END";
 }
 //------------------------------------------
 bool QStreamDecoder::decodeAudioFrame(unsigned char* bytes, int size)
@@ -154,7 +153,7 @@ bool QStreamDecoder::decodeAudioFrame(unsigned char* bytes, int size)
 	mPacket.data = bytes;
 
 	int len, out_size;
-	bool hasPicture = false;
+	bool hasOutput = false;
 	while (mPacket.size > 0)
 	{
 		int out_size = AVCODEC_MAX_AUDIO_FRAME_SIZE;
@@ -168,16 +167,18 @@ bool QStreamDecoder::decodeAudioFrame(unsigned char* bytes, int size)
 
 		if (out_size > 0)
 		{
-			// A frame has been decoded. Play it.
-			mAudioIO->write((const char*)mAudioFrame, out_size);
+			// A frame has been decoded. Play it if we have another buffer to
+			// reduce audio underrun
+			if (mBuffered)
+			{
+				mAudioIO->write((const char*)mAudioFrame, out_size);
+			}
+			else
+			{
+				mBuffered = true;
+			}
 
-			/*QFile file("C:\\users\\guigui\\test_audio.pcm");
-			file.open(QIODevice::Append|QIODevice::WriteOnly);
-			file.write((const char*)mAudioFrame, out_size);
-			file.close();*/
-
-			hasPicture = true;
-			qDebug() << "Decoded audio frame";
+			hasOutput = true;
 		}
 		else
 		{
@@ -189,7 +190,7 @@ bool QStreamDecoder::decodeAudioFrame(unsigned char* bytes, int size)
 		mPacket.data += len;
 	}
 
-	return hasPicture;
+	return hasOutput;
 }
 //------------------------------------------
 bool QStreamDecoder::decodeVideoFrame(unsigned char* bytes, int size)

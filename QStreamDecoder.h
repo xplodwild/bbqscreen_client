@@ -83,6 +83,7 @@ protected:
 
 	QAudioOutput* mAudioOutput;
 	QIODevice* mAudioIO;
+	bool mBuffered;
 
 	QImage mLastFrame;
 	ffmpeg::SwsContext* mConvertCtx;
