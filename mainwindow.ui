@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>433</width>
-    <height>481</height>
+    <width>627</width>
+    <height>414</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -22,7 +22,114 @@
    <item row="0" column="0" colspan="2">
     <widget class="QWidget" name="centralWidget" native="true">
      <layout class="QGridLayout" name="gridLayout_2">
-      <item row="0" column="0">
+      <item row="3" column="0">
+       <widget class="QLabel" name="label">
+        <property name="sizePolicy">
+         <sizepolicy hsizetype="Preferred" vsizetype="MinimumExpanding">
+          <horstretch>0</horstretch>
+          <verstretch>0</verstretch>
+         </sizepolicy>
+        </property>
+        <property name="font">
+         <font>
+          <family>Trebuchet MS</family>
+          <pointsize>10</pointsize>
+         </font>
+        </property>
+        <property name="text">
+         <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Welcome to BBQScreen client app! This apps let you see your screen shared by the BBQScreen Server App running on your Android device.&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-weight:600;&quot;&gt;To get started: &lt;/span&gt;Turn on the 'BBQScreen Remote Control' app on your Android device. It should appear in the list aside shortly after.&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-weight:600;&quot;&gt;Make sure: &lt;/span&gt;That you are on the same Wi-Fi network as your device, that your device screen is unlocked when connecting, and that the device IP address (if entered manually) is correct.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+        </property>
+        <property name="wordWrap">
+         <bool>true</bool>
+        </property>
+       </widget>
+      </item>
+      <item row="3" column="1">
+       <widget class="QGroupBox" name="groupBox_2">
+        <property name="title">
+         <string>List of detected devices</string>
+        </property>
+        <layout class="QGridLayout" name="gridLayout_4">
+         <item row="1" column="0" colspan="2">
+          <widget class="QLabel" name="label_3">
+           <property name="sizePolicy">
+            <sizepolicy hsizetype="Maximum" vsizetype="Preferred">
+             <horstretch>0</horstretch>
+             <verstretch>200</verstretch>
+            </sizepolicy>
+           </property>
+           <property name="minimumSize">
+            <size>
+             <width>130</width>
+             <height>0</height>
+            </size>
+           </property>
+           <property name="font">
+            <font>
+             <family>Trebuchet MS</family>
+             <pointsize>9</pointsize>
+             <weight>50</weight>
+             <bold>false</bold>
+            </font>
+           </property>
+           <property name="text">
+            <string>Or manually enter IP:</string>
+           </property>
+           <property name="wordWrap">
+            <bool>true</bool>
+           </property>
+          </widget>
+         </item>
+         <item row="1" column="2">
+          <widget class="QLineEdit" name="ebIP">
+           <property name="sizePolicy">
+            <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
+             <horstretch>0</horstretch>
+             <verstretch>0</verstretch>
+            </sizepolicy>
+           </property>
+           <property name="inputMask">
+            <string>###.###.###.###</string>
+           </property>
+          </widget>
+         </item>
+         <item row="0" column="0" colspan="3">
+          <widget class="QListWidget" name="listDevices"/>
+         </item>
+         <item row="2" column="0" colspan="3">
+          <widget class="QPushButton" name="btnConnect">
+           <property name="minimumSize">
+            <size>
+             <width>0</width>
+             <height>32</height>
+            </size>
+           </property>
+           <property name="font">
+            <font>
+             <family>Trebuchet MS</family>
+             <pointsize>10</pointsize>
+             <weight>75</weight>
+             <bold>true</bold>
+            </font>
+           </property>
+           <property name="styleSheet">
+            <string notr="true"/>
+           </property>
+           <property name="text">
+            <string>CONNECT</string>
+           </property>
+           <property name="autoExclusive">
+            <bool>false</bool>
+           </property>
+           <property name="default">
+            <bool>true</bool>
+           </property>
+          </widget>
+         </item>
+        </layout>
+       </widget>
+      </item>
+      <item row="0" column="0" colspan="2">
        <widget class="QLabel" name="label_2">
         <property name="font">
          <font>
@@ -40,7 +147,7 @@ font-weight:bold;</string>
         </property>
        </widget>
       </item>
-      <item row="1" column="0">
+      <item row="1" column="0" colspan="2">
        <widget class="Line" name="line">
         <property name="styleSheet">
          <string notr="true">color:#33b5e5</string>
@@ -50,28 +157,6 @@ font-weight:bold;</string>
         </property>
         <property name="orientation">
          <enum>Qt::Horizontal</enum>
-        </property>
-       </widget>
-      </item>
-      <item row="2" column="0">
-       <widget class="QLabel" name="label">
-        <property name="sizePolicy">
-         <sizepolicy hsizetype="Preferred" vsizetype="Expanding">
-          <horstretch>0</horstretch>
-          <verstretch>0</verstretch>
-         </sizepolicy>
-        </property>
-        <property name="font">
-         <font>
-          <family>Trebuchet MS</family>
-          <pointsize>10</pointsize>
-         </font>
-        </property>
-        <property name="text">
-         <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Welcome to BBQScreen client app! This apps let you see your screen shared by the BBQScreen Server App running on your Android device.&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-weight:600;&quot;&gt;To get started: &lt;/span&gt;Turn on the 'BBQScreen Remote Control' app on your Android device. It should appear in the list below shortly after.&lt;br/&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-weight:600;&quot;&gt;Make sure: &lt;/span&gt;That you are on the same Wi-Fi network as your device, that your device screen is unlocked when connecting, and that the device IP address (if entered manually) is correct.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-        </property>
-        <property name="wordWrap">
-         <bool>true</bool>
         </property>
        </widget>
       </item>
@@ -87,13 +172,6 @@ font-weight:bold;</string>
       <bool>false</bool>
      </property>
      <layout class="QGridLayout" name="gridLayout_3">
-      <item row="1" column="1" colspan="2">
-       <widget class="QLabel" name="label_5">
-        <property name="text">
-         <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;'O' : Offset orientation by -90°&lt;br/&gt;'P' : Offset orientation by 90°&lt;br/&gt;'F' : Full-screen toggle&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-        </property>
-       </widget>
-      </item>
       <item row="0" column="0" colspan="2">
        <widget class="QCheckBox" name="cbHighQuality">
         <property name="text">
@@ -104,113 +182,35 @@ font-weight:bold;</string>
         </property>
        </widget>
       </item>
-      <item row="0" column="2">
+      <item row="1" column="0">
        <widget class="QCheckBox" name="cbShowFps">
         <property name="text">
          <string>Show FPS</string>
         </property>
        </widget>
       </item>
-      <item row="1" column="0">
-       <widget class="QLabel" name="label_4">
-        <property name="text">
-         <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-weight:600;&quot;&gt;Shortcuts : &lt;/span&gt;&lt;span style=&quot; font-weight:600; color:#ff0000;&quot;&gt;CTRL + &lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-        </property>
-       </widget>
-      </item>
-      <item row="2" column="2">
+      <item row="3" column="3">
        <widget class="QPushButton" name="btnWebsite">
         <property name="text">
          <string>Go to our website</string>
         </property>
        </widget>
       </item>
-     </layout>
-    </widget>
-   </item>
-   <item row="1" column="0" colspan="2">
-    <widget class="QGroupBox" name="groupBox_2">
-     <property name="title">
-      <string>List of detected devices</string>
-     </property>
-     <layout class="QGridLayout" name="gridLayout_4">
-      <item row="1" column="2">
-       <widget class="QLineEdit" name="ebIP">
-        <property name="sizePolicy">
-         <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
-          <horstretch>0</horstretch>
-          <verstretch>0</verstretch>
-         </sizepolicy>
-        </property>
-        <property name="inputMask">
-         <string>###.###.###.###</string>
-        </property>
-       </widget>
-      </item>
-      <item row="0" column="0" colspan="3">
-       <widget class="QListWidget" name="listDevices"/>
-      </item>
-      <item row="1" column="0" colspan="2">
-       <widget class="QLabel" name="label_3">
-        <property name="sizePolicy">
-         <sizepolicy hsizetype="Maximum" vsizetype="Preferred">
-          <horstretch>0</horstretch>
-          <verstretch>200</verstretch>
-         </sizepolicy>
-        </property>
-        <property name="minimumSize">
-         <size>
-          <width>130</width>
-          <height>0</height>
-         </size>
-        </property>
-        <property name="font">
-         <font>
-          <family>Trebuchet MS</family>
-          <pointsize>9</pointsize>
-          <weight>50</weight>
-          <bold>false</bold>
-         </font>
-        </property>
+      <item row="0" column="2">
+       <widget class="QLabel" name="label_4">
         <property name="text">
-         <string>Or manually enter IP:</string>
+         <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-weight:600;&quot;&gt;Shortcuts : &lt;/span&gt;&lt;span style=&quot; font-weight:600; color:#ff0000;&quot;&gt;CTRL + &lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
         </property>
-        <property name="wordWrap">
-         <bool>true</bool>
+       </widget>
+      </item>
+      <item row="0" column="3" rowspan="2">
+       <widget class="QLabel" name="label_5">
+        <property name="text">
+         <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;'O' : Offset orientation by -90°&lt;br/&gt;'P' : Offset orientation by 90°&lt;br/&gt;'F' : Full-screen toggle&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
         </property>
        </widget>
       </item>
      </layout>
-    </widget>
-   </item>
-   <item row="2" column="0" colspan="2">
-    <widget class="QPushButton" name="btnConnect">
-     <property name="minimumSize">
-      <size>
-       <width>0</width>
-       <height>32</height>
-      </size>
-     </property>
-     <property name="font">
-      <font>
-       <family>Trebuchet MS</family>
-       <pointsize>10</pointsize>
-       <weight>75</weight>
-       <bold>true</bold>
-      </font>
-     </property>
-     <property name="styleSheet">
-      <string notr="true"/>
-     </property>
-     <property name="text">
-      <string>CONNECT</string>
-     </property>
-     <property name="autoExclusive">
-      <bool>false</bool>
-     </property>
-     <property name="default">
-      <bool>true</bool>
-     </property>
     </widget>
    </item>
    <item row="3" column="0" colspan="2">

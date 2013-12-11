@@ -30,9 +30,6 @@ MainWindow::MainWindow(QWidget *parent) :
 	ui(new Ui::MainWindow)
 {
 	ui->setupUi(this);
-	//setWindowFlags( Qt::CustomizeWindowHint );
-	this->setFixedSize(this->width(),this->height());
-
 
 	mAnnouncer = new QUdpSocket(this);
 	mAnnouncer->bind(QHostAddress::Any, 9876);
