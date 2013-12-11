@@ -26,6 +26,7 @@
 #include <QPainter>
 #include <QBuffer>
 #include <QLabel>
+#include <QtMultimedia/QMediaPlayer>
 #include "QStreamDecoder.h"
 
 #define FPS_AVERAGE_SAMPLES 50
@@ -104,6 +105,7 @@ public:
 private slots:
 	void processPendingDatagrams();
 	void onSocketStateChanged();
+	void onDecodeFinished(bool result, bool isAudio);
 
 private:
 	Ui::ScreenForm *ui;
@@ -120,14 +122,21 @@ private:
 	QString mHost;
 	bool mHighQuality;
 	bool mIsConnecting;
-	QList<QPixmap> mLastPixmap;
+	QPixmap mLastPixmap;
+	bool mLastPixmapDisplayed;
 	int mOrientationOffset;
 	bool mCtrlDown;
 	QPoint mOriginalSize;
 
-	QByteArray mBytesBuffer;
+	QByteArray mGlobalBytesBuffer;
+	int mVideoFrameSize;
+	int mAudioFrameSize;
+
+	QThread mAudioDecoderThread;
+	QThread mVideoDecoderThread;
 
 	QStreamDecoder mDecoder;
+	QStreamDecoder mAudioDecoder;
 	bool mReallyStop;
 
 	QTime mTimeSinceLastTouchEvent;

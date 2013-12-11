@@ -19,14 +19,36 @@
 #include "stdafx.h"
 #include "QStreamDecoder.h"
 
+#include <QtMultimedia/QAudioFormat>
+#include <QtMultimedia/QAudioOutput>
+
+QMutex QStreamDecoder::mMutex;
+
 //------------------------------------------
-QStreamDecoder::QStreamDecoder() :
+QStreamDecoder::QStreamDecoder(bool isAudio) :
 	mCodecCtx(nullptr),
 	mCodec(nullptr),
 	mPicture(nullptr),
 	mPictureRGB(nullptr),
 	mRGBBuffer(nullptr),
-	mConvertCtx(nullptr)
+	mConvertCtx(nullptr),
+	mIsAudio(isAudio)
+{
+
+}
+//------------------------------------------
+QStreamDecoder::~QStreamDecoder()
+{
+}
+//------------------------------------------
+void QStreamDecoder::decodeFrame(unsigned char* bytes, int size, bool lastRendered)
+{
+	mInput = bytes;
+	mInputSize = size;
+	mLastRendered = lastRendered;
+}
+//------------------------------------------
+void QStreamDecoder::initialize()
 {
 #ifndef NEW_FFMPEG_API
 	/* must be called before using avcodec lib */
@@ -39,10 +61,11 @@ QStreamDecoder::QStreamDecoder() :
 	ffmpeg::av_init_packet(&mPacket);
 
 	// Allocate decoder
-	mCodec = ffmpeg::avcodec_find_decoder(ffmpeg::CODEC_ID_H264);
+	mCodec = ffmpeg::avcodec_find_decoder(mIsAudio ? ffmpeg::CODEC_ID_AAC :
+		ffmpeg::CODEC_ID_H264);
 	if (!mCodec)
 	{
-		qDebug() << "Couldn't find H264 decoder!";
+		qDebug() << "Couldn't find " << (mIsAudio ? "H264" : "AAC LATM") << " decoder!";
 		return;
 	}
 
@@ -51,7 +74,11 @@ QStreamDecoder::QStreamDecoder() :
 #else
 	mCodecCtx = ffmpeg::avcodec_alloc_context();
 #endif
-	mPicture = ffmpeg::avcodec_alloc_frame();
+
+	if (mIsAudio)
+		mAudioFrame = (unsigned char*) ffmpeg::av_malloc(AVCODEC_MAX_AUDIO_FRAME_SIZE);
+	else
+		mPicture = ffmpeg::avcodec_alloc_frame();
 
 	if (mCodec->capabilities & CODEC_CAP_TRUNCATED)
 		mCodecCtx->flags |= CODEC_FLAG_TRUNCATED;
@@ -66,14 +93,106 @@ QStreamDecoder::QStreamDecoder() :
 		qDebug() << "Could not open codec!";
 		return;
 	}
-}
-//------------------------------------------
-QStreamDecoder::~QStreamDecoder()
-{
 
+	if (mIsAudio)
+	{
+		// For audio and audio only, we directly play the decoded stream as we
+		// don't need to do anything else with it.
+		QAudioFormat format;
+
+		format.setSampleRate(48000);
+		format.setChannelCount(2);
+		format.setSampleSize(16);
+		format.setCodec("audio/pcm");
+		format.setByteOrder(QAudioFormat::LittleEndian);
+		format.setSampleType(QAudioFormat::UnSignedInt);
+
+		QAudioDeviceInfo info(QAudioDeviceInfo::defaultOutputDevice());
+		if (!info.isFormatSupported(format))
+		{
+			QMessageBox::critical(0, "Audio playback error", "Raw audio format not supported by backend, cannot play audio.");
+			return;
+		}
+
+		mAudioOutput = new QAudioOutput(format);
+		mAudioIO = mAudioOutput->start();
+	}
 }
 //------------------------------------------
-bool QStreamDecoder::decodeFrame(unsigned char* bytes, int size)
+void QStreamDecoder::process()
+{
+	qDebug() << "Stream PROCESS START";
+	bool result = false;
+
+	mMutex.lock();
+	if (mCodecCtx == nullptr) initialize();
+
+	if (mIsAudio)
+	{
+		result = decodeAudioFrame(mInput, mInputSize);
+	}
+	else
+	{
+		result = decodeVideoFrame(mInput, mInputSize);
+	}
+
+	mMutex.unlock();
+
+	delete[] mInput;
+	mInput = NULL;
+
+	emit decodeFinished(result, mIsAudio);
+	qDebug() << "Stream PROCESS END";
+}
+//------------------------------------------
+bool QStreamDecoder::decodeAudioFrame(unsigned char* bytes, int size)
+{
+	if (size <= 0)
+		return false;
+
+	mPacket.size = size;
+	mPacket.data = bytes;
+
+	int len, out_size;
+	bool hasPicture = false;
+	while (mPacket.size > 0)
+	{
+		int out_size = AVCODEC_MAX_AUDIO_FRAME_SIZE;
+		len = ffmpeg::avcodec_decode_audio3(mCodecCtx, (short*)mAudioFrame, &out_size, &mPacket);
+
+		if (len < 0)
+		{
+			qDebug() << "Error while decoding audio frame";
+			return false;
+		}
+
+		if (out_size > 0)
+		{
+			// A frame has been decoded. Play it.
+			mAudioIO->write((const char*)mAudioFrame, out_size);
+
+			/*QFile file("C:\\users\\guigui\\test_audio.pcm");
+			file.open(QIODevice::Append|QIODevice::WriteOnly);
+			file.write((const char*)mAudioFrame, out_size);
+			file.close();*/
+
+			hasPicture = true;
+			qDebug() << "Decoded audio frame";
+		}
+		else
+		{
+			qDebug() << "Could not get audio data from this frame";
+		}
+
+		
+		mPacket.size -= len;
+		mPacket.data += len;
+	}
+
+	return hasPicture;
+}
+//------------------------------------------
+bool QStreamDecoder::decodeVideoFrame(unsigned char* bytes, int size)
 {
 	if (size <= 0)
 		return false;
@@ -89,7 +208,7 @@ bool QStreamDecoder::decodeFrame(unsigned char* bytes, int size)
 
 		if (len < 0)
 		{
-			qDebug() << "Error while decoding frame";
+			qDebug() << "Error while decoding video frame";
 			return false;
 		}
 
@@ -107,7 +226,9 @@ bool QStreamDecoder::decodeFrame(unsigned char* bytes, int size)
 				// Allocate an AVFrame structure
 				mPictureRGB = ffmpeg::avcodec_alloc_frame();
 				if(!mPictureRGB)
+				{
 					return false;
+				}
 
 				// Determine required buffer size and allocate buffer
 				int numBytes = ffmpeg::avpicture_get_size(ffmpeg::PIX_FMT_RGB24, mCodecCtx->width, mCodecCtx->height);
@@ -143,19 +264,22 @@ bool QStreamDecoder::decodeFrame(unsigned char* bytes, int size)
 			// Convert to RGB
 			ffmpeg::sws_scale(mConvertCtx, mPicture->data, mPicture->linesize, 0, mCodecCtx->height, mPictureRGB->data, mPictureRGB->linesize);
 
-			// Convert the frame to QImage
-			if (mLastFrame.width() != w ||
-				mLastFrame.height() != h ||
-				mLastFrame.format() != QImage::Format::Format_RGB888)
+			if (mLastRendered)
 			{
-				mLastFrame = QImage(w,h,QImage::Format_RGB888);
-			}
+				// Convert the frame to QImage
+				if (mLastFrame.width() != w ||
+					mLastFrame.height() != h ||
+					mLastFrame.format() != QImage::Format::Format_RGB888)
+				{
+					mLastFrame = QImage(w,h,QImage::Format_RGB888);
+				}
 
-			for(int y=0; y < h; y++)
-			{
-				memcpy(mLastFrame.scanLine(y), mPictureRGB->data[0]+y*mPictureRGB->linesize[0], w*3);
+				for (int y=0; y < h; y++)
+				{
+					memcpy(mLastFrame.scanLine(y), mPictureRGB->data[0]+y*mPictureRGB->linesize[0], w*3);
+				}
 			}
-
+			
 			hasPicture = true;
 		}
 		else

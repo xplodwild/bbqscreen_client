@@ -26,6 +26,7 @@
 #include <QCloseEvent>
 #include <QFile>
 #include <QtNetwork/QHostAddress>
+#include <QtGui/QPixmap>
 #if defined(__APPLE__)
  #include <Carbon/Carbon.h>
 #endif
@@ -100,9 +101,21 @@ ScreenForm::ScreenForm(MainWindow* win, QWidget *parent) :
 	mShowFps(false),
 	mReallyStop(false),
 	mCtrlDown(false),
-	mIsMouseDown(false)
+	mIsMouseDown(false),
+	mDecoder(false),
+	mAudioDecoder(true)
 {
 	ui->setupUi(this);
+
+	mDecoder.moveToThread(&mVideoDecoderThread);
+	mAudioDecoder.moveToThread(&mAudioDecoderThread);
+	connect(&mVideoDecoderThread, SIGNAL(started()), &mDecoder, SLOT(process()));
+	connect(&mAudioDecoderThread, SIGNAL(started()), &mDecoder, SLOT(process()));
+	
+
+
+	connect(&mDecoder, SIGNAL(decodeFinished(bool, bool)), this, SLOT(onDecodeFinished(bool, bool)));
+	connect(&mAudioDecoder, SIGNAL(decodeFinished(bool, bool)), this, SLOT(onDecodeFinished(bool, bool)));
 
 	// Start TCP client
 	connect(&mTcpSocket, SIGNAL(readyRead()),
@@ -202,6 +215,7 @@ void ScreenForm::processPendingDatagrams()
 	{
 		if (!isVisible() || !ui || mReallyStop)
 			return;
+
 #ifdef PROFILING
 		int timeSinceLastFrame = mFrameTimer.elapsed();
 		qDebug() << "Got datagram after " << timeSinceLastFrame << " ms";
@@ -209,71 +223,116 @@ void ScreenForm::processPendingDatagrams()
 #endif
 
 		qDebug() << "Has packet of " << mTcpSocket.bytesAvailable() << " bytes";
+
 		// Read the first pending packet
-		mBytesBuffer.append(mTcpSocket.readAll());
+		mGlobalBytesBuffer.append(mTcpSocket.readAll());
 
-		int remainSize = mBytesBuffer.size();
-
-		while (mBytesBuffer.size() > 6)
+		int remainSize = mGlobalBytesBuffer.size();
+		while (mGlobalBytesBuffer.size() > 10)
 		{
 			// Read header
-			quint8 headerSize = 6, protVersion, orientation;
-			quint32 frameSize;
+			quint8 headerSize, protVersion, orientation;
+			quint32 frameSize, audioFrameSize = 0;
 
-			protVersion = bytesToUInt8(mBytesBuffer, 0);
-			orientation = bytesToUInt8(mBytesBuffer, 1);
-			frameSize = bytesToUInt32(mBytesBuffer, 2);
+			protVersion = bytesToUInt8(mGlobalBytesBuffer, 0);
 
-			//qDebug() << "Frame is " << frameSize << " bytes (prot " << protVersion << " ori " << orientation << ")";
+			if (protVersion == 3) // BBQScreen 2.1.2 - Legacy method, no audio
+				headerSize = 6;
+			else if (protVersion == 4) // BBQScreen 2.2.0 - With audio
+				headerSize = 10;
+			else
+				qWarning() << "WARN: Unknown protVersion " << protVersion;
 
-			if (frameSize > mBytesBuffer.size()-headerSize)
+			orientation = bytesToUInt8(mGlobalBytesBuffer, 1);
+			frameSize = bytesToUInt32(mGlobalBytesBuffer, 2);
+
+			if (protVersion == 4)
 			{
-				//qDebug() << "Will revisit later (" << (mBytesBuffer.size()-headerSize) << "/" << frameSize << ")";
+				audioFrameSize = bytesToUInt32(mGlobalBytesBuffer, 6);
+				//qDebug() << "Protocol V4, video size=" << frameSize << " audio size=" << audioFrameSize;
+			}
+
+			mVideoFrameSize = frameSize;
+			mAudioFrameSize = audioFrameSize;
+			if (frameSize+audioFrameSize+headerSize > mGlobalBytesBuffer.size())
+			{
+				//qDebug() << "-- Will revisit later (" << (mGlobalBytesBuffer.size()-headerSize) << "/" << (frameSize+audioFrameSize) << ")";
 				break;
 			}
 
-			mBytesBuffer = mBytesBuffer.remove(0,headerSize);
+			mGlobalBytesBuffer = mGlobalBytesBuffer.remove(0, headerSize);
 
-			if (mDecoder.decodeFrame((unsigned char*)mBytesBuffer.data(), frameSize))
+			// Decode the video frame (if any)
+			if (frameSize > 0)
 			{
-				QImage img = mDecoder.getLastFrame();
-				mRotationAngle = orientation * (-90) + mOrientationOffset;
-
-				mOriginalSize.setX(img.width());
-				mOriginalSize.setY(img.height());
-
-				if (mRotationAngle != 0)
-				{
-					QTransform t;
-					t.rotate(mRotationAngle);
-					img = img.transformed(t, mHighQuality ? Qt::SmoothTransformation : Qt::FastTransformation);
-				}
-
-				mLastPixmap.append(QPixmap::fromImage(img));
-
-				mTotalFrameReceived++;
-				mTimeLastFrame = mFrameTimer.elapsed();
-
-#ifdef PROFILING
-				timeSinceLastFrame = mFrameTimer.elapsed();
-				qDebug() << "Decoded in " << timeSinceLastFrame << " ms";
-#endif
-				if (!isVisible() || !ui || mReallyStop)
-					return;
-
-				if (mShowFps)
-					ui->lblFps->setText(QString::number((double)(mTotalFrameReceived/(mFrameTimer.elapsed()/1000.0))) + " fps");
-				else
-					ui->lblFps->setText("");
+				unsigned char* buff = new unsigned char[frameSize];
+				memcpy(buff, mGlobalBytesBuffer.data(), frameSize);
+				mDecoder.decodeFrame(buff, frameSize, mLastPixmapDisplayed);
+				mDecoder.process();
+				//mVideoDecoderThread.start();
+				mGlobalBytesBuffer = mGlobalBytesBuffer.remove(0, frameSize);
 			}
-			else
+			
+			// If protocol version 4, device the audio frame (if any)
+			if (audioFrameSize > 0)
 			{
-				qDebug() << "Error decoding frame";
+				unsigned char* buff = new unsigned char[audioFrameSize];
+				memcpy(buff, mGlobalBytesBuffer.data(), audioFrameSize);
+				mAudioDecoder.decodeFrame(buff, audioFrameSize);
+				mAudioDecoder.process();
+				//mAudioDecoderThread.start();
+				mGlobalBytesBuffer = mGlobalBytesBuffer.remove(0, audioFrameSize);
 			}
 
-			mBytesBuffer = mBytesBuffer.remove(0, frameSize);
+
+			
 		}
 	}
+}
+//----------------------------------------------------
+void ScreenForm::onDecodeFinished(bool result, bool isAudio)
+{
+	if (!isAudio && result)
+	{
+		if (mLastPixmapDisplayed)
+		{
+			QImage img = mDecoder.getLastFrame();
+			//mRotationAngle = orientation * (-90) + mOrientationOffset;
+
+			mOriginalSize.setX(img.width());
+			mOriginalSize.setY(img.height());
+
+			if (mRotationAngle != 0)
+			{
+				QTransform t;
+				t.rotate(mRotationAngle);
+				img = img.transformed(t, mHighQuality ? Qt::SmoothTransformation : Qt::FastTransformation);
+			}
+
+			mLastPixmap = QPixmap::fromImage(img);
+			mLastPixmapDisplayed = false;
+
+			mTotalFrameReceived++;
+			mTimeLastFrame = mFrameTimer.elapsed();
+			
+#ifdef PROFILING
+			timeSinceLastFrame = mFrameTimer.elapsed();
+			qDebug() << "Decoded in " << timeSinceLastFrame << " ms";
+#endif
+			if (!isVisible() || !ui || mReallyStop)
+				return;
+
+			if (mShowFps)
+				ui->lblFps->setText(QString::number((double)(mTotalFrameReceived/(mFrameTimer.elapsed()/1000.0))) + " fps");
+			else
+				ui->lblFps->setText("");
+		}
+	}
+
+	if (isAudio)
+		mAudioDecoderThread.quit();
+	else
+		mVideoDecoderThread.quit();
 }
 //----------------------------------------------------
 void ScreenForm::onSocketStateChanged()
@@ -318,15 +377,11 @@ void ScreenForm::timerEvent(QTimerEvent *evt)
 	if (mReallyStop)
 		return;
 
-	if (mLastPixmap.size() > 0)
+	if (!mLastPixmapDisplayed)
 	{
-		while (mLastPixmap.size() >= 3)
-			mLastPixmap.pop_front();
-
 		// Display next frame
-		ui->lblDisplay->clear();
-		ui->lblDisplay->setPixmap(mLastPixmap.front());
-		mLastPixmap.pop_front();
+		ui->lblDisplay->setPixmap(mLastPixmap);
+		mLastPixmapDisplayed = true;
 	}
 
 	if (mTimeSinceLastTouchEvent.elapsed() > 16 && mTouchEventPacket.size() > 0)

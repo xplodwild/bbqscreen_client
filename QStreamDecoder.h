@@ -22,6 +22,10 @@
 #include <QIODevice>
 #include <QFile>
 #include <QImage>
+#include <QtMultimedia/QAudioOutput>
+#include <QIODevice>
+#include <QThread>
+#include <QMutex>
 
 #ifdef NEW_FFMPEG_API
 namespace ffmpeg {
@@ -36,31 +40,52 @@ extern "C" {
 
 class QStreamDecoder : public QObject
 {
-    Q_OBJECT;
+	Q_OBJECT;
 
 public:
-    // ctor
-    QStreamDecoder();
+	// ctor
+	QStreamDecoder(bool isAudio);
 
-    // dtor
-    ~QStreamDecoder();
+	// dtor
+	~QStreamDecoder();
 
-    // Decode a frame
-    bool decodeFrame(unsigned char* bytes, int size);
+	// Returns the last decoded frame as QImage
+	QImage getLastFrame() const;
 
-    // Returns the last decoded frame as QImage
-    QImage getLastFrame() const;
+public slots:
+	void decodeFrame(unsigned char* bytes, int size, bool lastRendered = true);
+	void process();
+
+signals:
+	void decodeFinished(bool result, bool isAudio);
 
 protected:
-    ffmpeg::AVCodec* mCodec;
-    ffmpeg::AVCodecContext* mCodecCtx;
-    ffmpeg::AVPacket mPacket;
-    ffmpeg::AVFrame* mPicture;
-    ffmpeg::AVFrame* mPictureRGB;
-    unsigned char* mRGBBuffer;
+	void initialize();
 
-    QImage mLastFrame;
-    ffmpeg::SwsContext* mConvertCtx;
+	bool decodeVideoFrame(unsigned char* bytes, int size);
+	bool decodeAudioFrame(unsigned char* bytes, int size);
+
+protected:
+	static QMutex mMutex;
+
+	unsigned char* mInput;
+	int mInputSize;
+	bool mLastRendered;
+
+	bool mIsAudio;
+	ffmpeg::AVCodec* mCodec;
+	ffmpeg::AVCodecContext* mCodecCtx;
+	ffmpeg::AVPacket mPacket;
+	ffmpeg::AVFrame* mPicture;
+	ffmpeg::AVFrame* mPictureRGB;
+	unsigned char* mAudioFrame;
+	unsigned char* mRGBBuffer;
+
+	QAudioOutput* mAudioOutput;
+	QIODevice* mAudioIO;
+
+	QImage mLastFrame;
+	ffmpeg::SwsContext* mConvertCtx;
 };
 
 
