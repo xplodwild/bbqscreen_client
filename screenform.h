@@ -48,25 +48,6 @@ namespace Ui {
 
 class MainWindow;
 
-class ShrinkableQLabel : public QLabel
-{
-	Q_OBJECT;
-
-public:
-	ShrinkableQLabel(QWidget* parent = 0);
-	void paintEvent(QPaintEvent *aEvent);
-	void setPixmap(const QPixmap& aPicture);
-	void setHighQuality(bool high);
-	QSize getRenderSize();
-
-protected:
-	void _displayImage();
-
-	QPixmap mSource;
-	QPixmap mCurrent;
-	bool mHighQuality;
-};
-
 class ScreenForm : public QWidget
 {
 	Q_OBJECT
@@ -102,6 +83,9 @@ public:
 	bool nativeEvent(const QByteArray& eventType, void* message, long* result);
 #endif
 
+protected:
+	void attemptConnection();
+
 private slots:
 	void processPendingDatagrams();
 	void onSocketStateChanged();
@@ -111,34 +95,40 @@ private:
 	Ui::ScreenForm *ui;
 	MainWindow* mParentWindow;
 
-	bool mIsMouseDown;
-
 	QTcpSocket mTcpSocket;
-	int mTotalFrameReceived;
-	int mRotationAngle;
-	QTime mFrameTimer;
-	unsigned long mTimeLastFrame;
-	bool mShowFps;
-	QString mHost;
-	bool mHighQuality;
-	bool mIsConnecting;
-	QPixmap mLastPixmap;
-	bool mLastPixmapDisplayed;
-	int mOrientationOffset;
-	bool mCtrlDown;
-	QPoint mOriginalSize;
 
-	QByteArray mGlobalBytesBuffer;
-	int mVideoFrameSize;
-	int mAudioFrameSize;
-
+	// Decoders
+	QStreamDecoder mDecoder;
+	QStreamDecoder mAudioDecoder;
 	QThread mAudioDecoderThread;
 	QThread mVideoDecoderThread;
 
-	QStreamDecoder mDecoder;
-	QStreamDecoder mAudioDecoder;
-	bool mReallyStop;
+	// Session settings
+	bool mHighQuality;
+	bool mIsConnecting;
+	bool mShowFps;
+	bool mStopped;
+	QString mHost;
 
+	// Session data
+	QByteArray mGlobalBytesBuffer;
+	int mVideoFrameSize;
+	int mAudioFrameSize;
+	int mConnectionAttempts;
+	int mConnectionTimerId;
+
+	// Remote frame info
+	int mTotalFrameReceived;
+	int mRotationAngle;
+	int mOrientationOffset;
+	QPoint mOriginalSize;
+	QTime mFrameTimer;
+	QPixmap mLastPixmap;
+	bool mLastPixmapDisplayed;
+
+	// Local input info
+	bool mIsMouseDown;
+	bool mCtrlDown;
 	QTime mTimeSinceLastTouchEvent;
 	QByteArray mTouchEventPacket;
 };

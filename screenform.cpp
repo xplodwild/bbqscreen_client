@@ -27,7 +27,18 @@
 #include <QFile>
 #include <QtNetwork/QHostAddress>
 #include <QtGui/QPixmap>
-#if defined(__APPLE__)
+
+#if defined(_WIN32) || defined(_WIN64)
+#define PLAT_WINDOWS
+#elif defined(__linux) || defined(__unix) || defined(__posix)
+#define PLAT_LINUX
+#elif defined(__APPLE__)
+#define PLAT_APPLE
+#else
+#warning "Unsupported keyboard platform"
+#endif
+
+#ifdef PLAT_APPLE
  #include <Carbon/Carbon.h>
 #endif
 
@@ -35,61 +46,6 @@
 
 //#define PROFILING
 
-//----------------------------------------------------
-//----------------------------------------------------
-ShrinkableQLabel::ShrinkableQLabel(QWidget* parent /* = 0 */) : QLabel(parent),
-	mHighQuality(false)
-{
-
-}
-//----------------------------------------------------
-void ShrinkableQLabel::setHighQuality(bool high)
-{
-	mHighQuality = high;
-}
-//---------------------------------------------------
-void ShrinkableQLabel::paintEvent(QPaintEvent *aEvent)
-{
-	QLabel::paintEvent(aEvent);
-	_displayImage();
-}
-//----------------------------------------------------
-void ShrinkableQLabel::setPixmap(const QPixmap& aPicture)
-{
-	mSource = mCurrent = aPicture;
-	repaint();
-}
-//----------------------------------------------------
-void ShrinkableQLabel::_displayImage()
-{
-	if (mSource.isNull()) //no image was set, don't draw anything
-		return;
-
-	float cw = width(), ch = height();
-	float pw = mCurrent.width(), ph = mCurrent.height();
-
-	if (pw > cw && ph > ch && pw/cw > ph/ch || //both width and high are bigger, ratio at high is bigger or
-		pw > cw && ph <= ch || //only the width is bigger or
-		pw < cw && ph < ch && cw/pw < ch/ph //both width and height is smaller, ratio at width is smaller
-		)
-		mCurrent = mSource.scaledToWidth(cw, mHighQuality ? Qt::SmoothTransformation : Qt::TransformationMode::FastTransformation);
-	else if (pw > cw && ph > ch && pw/cw <= ph/ch || //both width and high are bigger, ratio at width is bigger or
-		ph > ch && pw <= cw || //only the height is bigger or
-		pw < cw && ph < ch && cw/pw > ch/ph //both width and height is smaller, ratio at height is smaller
-		)
-		mCurrent = mSource.scaledToHeight(ch, mHighQuality ? Qt::SmoothTransformation : Qt::TransformationMode::FastTransformation);
-
-	int x = (cw - mCurrent.width())/2, y = (ch - mCurrent.height())/2;
-
-	QPainter paint(this);
-	paint.drawPixmap(x, y, mCurrent);
-}
-//----------------------------------------------------
-QSize ShrinkableQLabel::getRenderSize()
-{
-	return mCurrent.size();
-}
-//----------------------------------------------------
 //----------------------------------------------------
 ScreenForm::ScreenForm(MainWindow* win, QWidget *parent) :
 	QWidget(parent),
@@ -99,7 +55,7 @@ ScreenForm::ScreenForm(MainWindow* win, QWidget *parent) :
 	mParentWindow(win),
 	mOrientationOffset(0),
 	mShowFps(false),
-	mReallyStop(false),
+	mStopped(false),
 	mCtrlDown(false),
 	mIsMouseDown(false),
 	mDecoder(false),
@@ -107,12 +63,11 @@ ScreenForm::ScreenForm(MainWindow* win, QWidget *parent) :
 {
 	ui->setupUi(this);
 
+	// Run decoder in separate threads
 	mDecoder.moveToThread(&mVideoDecoderThread);
 	mAudioDecoder.moveToThread(&mAudioDecoderThread);
 	connect(&mVideoDecoderThread, SIGNAL(started()), &mDecoder, SLOT(process()));
 	connect(&mAudioDecoderThread, SIGNAL(started()), &mDecoder, SLOT(process()));
-	
-
 
 	connect(&mDecoder, SIGNAL(decodeFinished(bool, bool)), this, SLOT(onDecodeFinished(bool, bool)));
 	connect(&mAudioDecoder, SIGNAL(decodeFinished(bool, bool)), this, SLOT(onDecodeFinished(bool, bool)));
@@ -125,7 +80,8 @@ ScreenForm::ScreenForm(MainWindow* win, QWidget *parent) :
 
 	mFrameTimer.start();
 
-	// The client runs at a refresh rate of 35 fps whereas the server is locked at 25 fps.
+	// On protocol v3, the client runs at a refresh rate of 35 fps whereas
+	// the server is locked at 25 fps. On protocol v4, the stream is at 60fps
 	// This is to ensure both smoothness and responsiveness
 	startTimer(1000/35, Qt::PreciseTimer);
 }
@@ -148,48 +104,25 @@ void ScreenForm::connectTo(const QString &host)
 	qDebug() << "Connecting to " << host;
 	mIsConnecting = true;
 
-	mTcpSocket.connectToHost(QHostAddress(mHost), 9876);
-
 	QTime connectionTimeout;
 	connectionTimeout.start();
-	int attempt = 1;
-
-	while (mTcpSocket.state() != QAbstractSocket::ConnectedState && attempt < 4)
+	mConnectionAttempts = 0;
+	mConnectionTimerId = startTimer(1000);
+	attemptConnection();
+}
+//----------------------------------------------------
+void ScreenForm::attemptConnection()
+{
+	mIsConnecting = true;
+	if (mTcpSocket.state() != QAbstractSocket::UnconnectedState)
 	{
-		if (!ui)
-			return;
-
-		ui->lblFps->setText("Connecting to '" + mHost + "'... (Attempt " + QString::number(attempt) + "/3)");
-		qApp->processEvents();
-
-
-		if (connectionTimeout.elapsed() > 1000)
-		{
-			mTcpSocket.disconnectFromHost();
-			mTcpSocket.waitForDisconnected(1000);
-			mTcpSocket.connectToHost(QHostAddress(mHost), 9876);
-			connectionTimeout.restart();
-			attempt++;
-		}
+		mTcpSocket.disconnectFromHost();
+		mTcpSocket.waitForDisconnected(1000);
 	}
 
-	if (mTcpSocket.state() != QAbstractSocket::ConnectedState)
-	{
-		QMessageBox::critical(this, "Could not connect", "Unable to connect to " + host + " after 3 attempts. Please check the device IP, and make sure your screen is unlocked.\nError message: " + mTcpSocket.errorString());
-		close();
-	}
-
-	mIsConnecting = false;
-	mFrameTimer.start();
-	mTimeLastFrame = mFrameTimer.elapsed();
-
-	if (!mShowFps)
-	{
-		ui->lblFps->setText("");
-		ui->lblFps->setVisible(false);
-	}
-
-	mTimeSinceLastTouchEvent.restart();
+	mConnectionAttempts++;
+	mTcpSocket.connectToHost(QHostAddress(mHost), 9876);
+	ui->lblFps->setText("Connecting to '" + mHost + "'... (Attempt " + QString::number(mConnectionAttempts) + "/3)");
 }
 //----------------------------------------------------
 void ScreenForm::setQuality(bool high)
@@ -205,7 +138,7 @@ void ScreenForm::setShowFps(bool show)
 //----------------------------------------------------
 void ScreenForm::processPendingDatagrams()
 {
-	if (!isVisible() || !ui || mReallyStop)
+	if (!isVisible() || !ui || mStopped)
 		return;
 
 	int currentSocket = 0;
@@ -213,7 +146,7 @@ void ScreenForm::processPendingDatagrams()
 
 	while (mTcpSocket.bytesAvailable() > 0)
 	{
-		if (!isVisible() || !ui || mReallyStop)
+		if (!isVisible() || !ui || mStopped)
 			return;
 
 #ifdef PROFILING
@@ -222,7 +155,7 @@ void ScreenForm::processPendingDatagrams()
 		mFrameTimer.restart();
 #endif
 
-		qDebug() << "Has packet of " << mTcpSocket.bytesAvailable() << " bytes";
+		//qDebug() << "Has packet of " << mTcpSocket.bytesAvailable() << " bytes";
 
 		// Read the first pending packet
 		mGlobalBytesBuffer.append(mTcpSocket.readAll());
@@ -283,9 +216,6 @@ void ScreenForm::processPendingDatagrams()
 				//mAudioDecoderThread.start();
 				mGlobalBytesBuffer = mGlobalBytesBuffer.remove(0, audioFrameSize);
 			}
-
-
-			
 		}
 	}
 }
@@ -313,13 +243,12 @@ void ScreenForm::onDecodeFinished(bool result, bool isAudio)
 			mLastPixmapDisplayed = false;
 
 			mTotalFrameReceived++;
-			mTimeLastFrame = mFrameTimer.elapsed();
 			
 #ifdef PROFILING
 			timeSinceLastFrame = mFrameTimer.elapsed();
 			qDebug() << "Decoded in " << timeSinceLastFrame << " ms";
 #endif
-			if (!isVisible() || !ui || mReallyStop)
+			if (!isVisible() || !ui || mStopped)
 				return;
 
 			if (mShowFps)
@@ -337,7 +266,7 @@ void ScreenForm::onDecodeFinished(bool result, bool isAudio)
 //----------------------------------------------------
 void ScreenForm::onSocketStateChanged()
 {
-	if (mIsConnecting || !isVisible() || !ui || mReallyStop)
+	if (mIsConnecting || !isVisible() || !ui || mStopped)
 		return;
 
 	if (mTcpSocket.state() == QAbstractSocket::UnconnectedState)
@@ -374,27 +303,68 @@ void ScreenForm::onSocketStateChanged()
 //----------------------------------------------------
 void ScreenForm::timerEvent(QTimerEvent *evt)
 {
-	if (mReallyStop)
+	if (mStopped)
 		return;
 
-	if (!mLastPixmapDisplayed)
+	if (evt->timerId() == mConnectionTimerId)
 	{
-		// Display next frame
-		ui->lblDisplay->setPixmap(mLastPixmap);
-		mLastPixmapDisplayed = true;
+		if (mTcpSocket.state() != QAbstractSocket::ConnectedState)
+		{
+			if (mConnectionAttempts < 3)
+			{
+				// Unable to connect, try again
+				attemptConnection();
+			}
+			else
+			{
+				// Tried too much times, abort
+				QMessageBox::critical(this, "Could not connect", "Unable to connect to " + mHost + " after 3 attempts. Please check the device IP, and make sure your screen is unlocked.\nError message: " + mTcpSocket.errorString());
+				killTimer(mConnectionTimerId);
+				mConnectionTimerId = -1;
+				close();
+				return;
+			}
+		}
+		else
+		{
+			// Connected
+			mIsConnecting = false;
+			mFrameTimer.start();
+
+			if (!mShowFps)
+			{
+				ui->lblFps->setText("");
+				ui->lblFps->setVisible(false);
+			}
+
+			mTimeSinceLastTouchEvent.restart();
+			killTimer(mConnectionTimerId);
+			mConnectionTimerId = -1;
+		}
 	}
-
-	if (mTimeSinceLastTouchEvent.elapsed() > 16 && mTouchEventPacket.size() > 0)
+	else
 	{
-		mTcpSocket.write(mTouchEventPacket);
-		mTcpSocket.flush();
-		mTouchEventPacket.clear();
+		// Frame updater timer
 
-		mTimeSinceLastTouchEvent.restart();
+		if (!mLastPixmapDisplayed)
+		{
+			// Display next frame
+			ui->lblDisplay->setPixmap(mLastPixmap);
+			mLastPixmapDisplayed = true;
+		}
+
+		if (mTimeSinceLastTouchEvent.elapsed() > 16 && mTouchEventPacket.size() > 0)
+		{
+			mTcpSocket.write(mTouchEventPacket);
+			mTcpSocket.flush();
+			mTouchEventPacket.clear();
+
+			mTimeSinceLastTouchEvent.restart();
+		}
 	}
 }
 //----------------------------------------------------
-#if defined(__APPLE__)
+#if defined(PLAT_APPLE)
 bool ScreenForm::nativeEvent(const QByteArray& eventType, void* message, long* result)
 {
 	EventRef* event = reinterpret_cast<EventRef*>(message);
@@ -434,9 +404,9 @@ void ScreenForm::keyReleaseEvent(QKeyEvent *evt)
 		if (!mCtrlDown)
 		{
 			// Route the key to the server
-#if defined(_WIN32) || defined(_WIN64) || defined(__linux) || defined(__unix) || defined(__posix)
+#if defined(PLAT_WINDOWS) || defined(PLAT_LINUX)
 			sendKeyboardInput(false, evt->nativeScanCode());
-#elif defined(__APPLE__)
+#elif defined(PLAT_APPLE)
 			sendKeyboardInput(false, evt->key());
 #else
 #error "Unsupported keyboard platform"
@@ -458,17 +428,16 @@ void ScreenForm::keyPressEvent(QKeyEvent *evt)
 		if (!mCtrlDown)
 		{
 			// Route the key to the server
-#if defined(_WIN32) || defined(_WIN64) || defined(__linux) || defined(__unix) || defined(__posix)
+#if defined(PLAT_WINDOWS) || defined(PLAT_LINUX)
 			sendKeyboardInput(true, evt->nativeScanCode());
-#elif defined(__APPLE__)
+#elif defined(PLAT_APPLE)
 			sendKeyboardInput(true, evt->key());
-#else
-#error "Unsupported keyboard platform"
 #endif
 		}
 		break;
 	}
 
+	// Handle Ctrl-... shortcuts
 	if (mCtrlDown)
 	{
 		switch (evt->key())
@@ -583,8 +552,7 @@ void ScreenForm::closeEvent(QCloseEvent *evt)
 {
 	mParentWindow->show();
 	QWidget::closeEvent(evt);
-	mParentWindow->notifyScreenClose(this);
-	mReallyStop = true;
+	mStopped = true;
 }
 //----------------------------------------------------
 void ScreenForm::sendKeyboardInput(bool down, unsigned int keyCode)

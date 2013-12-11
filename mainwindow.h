@@ -36,14 +36,11 @@ class MainWindow : public QDialog
 public:
 	explicit MainWindow(QWidget *parent = 0);
 	~MainWindow();
-	void notifyScreenClose(ScreenForm* form);
-
-	void timerEvent(QTimerEvent* evt);
 
 private slots:
 	void onClickConnect();
 	void onClickWebsite();
-	void onReadyRead();
+	void onDiscoveryReadyRead();
 	void onSelectDevice(QListWidgetItem* item);
 
 

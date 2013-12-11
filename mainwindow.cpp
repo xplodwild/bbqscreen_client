@@ -31,12 +31,13 @@ MainWindow::MainWindow(QWidget *parent) :
 {
 	ui->setupUi(this);
 
+	// Setup UDP discovery socket
 	mAnnouncer = new QUdpSocket(this);
 	mAnnouncer->bind(QHostAddress::Any, 9876);
-	connect(mAnnouncer, SIGNAL(readyRead()), this, SLOT(onReadyRead()));
+	connect(mAnnouncer, SIGNAL(readyRead()), this, SLOT(onDiscoveryReadyRead()));
 
+	// Connect UI slots
 	connect(ui->listDevices, SIGNAL(itemClicked(QListWidgetItem*)), this, SLOT(onSelectDevice(QListWidgetItem*)));
-
 	connect(ui->btnConnect, SIGNAL(clicked()), this, SLOT(onClickConnect()));
 	connect(ui->btnWebsite, SIGNAL(clicked()), this, SLOT(onClickWebsite()));
 }
@@ -48,11 +49,24 @@ MainWindow::~MainWindow()
 //----------------------------------------------------
 void MainWindow::onClickConnect()
 {
+	// Check that the IP entered is valid
+	QString ip = ui->ebIP->text();
+	QHostAddress address(ip);
+	if (QAbstractSocket::IPv4Protocol != address.protocol())
+	{
+		QMessageBox::critical(this, "Invalid IP", "The IP address you entered is invalid");
+		return;
+	}
+
+	// The IP is valid, connect to there
 	ScreenForm* screen = new ScreenForm(this);
+	screen->setAttribute(Qt::WA_DeleteOnClose);
 	screen->setQuality(ui->cbHighQuality->isChecked());
 	screen->setShowFps(ui->cbShowFps->isChecked());
 	screen->show();
 	screen->connectTo(ui->ebIP->text());
+
+	// Hide this dialog
 	hide();
 }
 //----------------------------------------------------
@@ -67,15 +81,18 @@ void MainWindow::onSelectDevice(QListWidgetItem* item)
 	}
 }
 //----------------------------------------------------
-void MainWindow::onReadyRead()
+void MainWindow::onDiscoveryReadyRead()
 {
+	QByteArray datagram;
+	QHostAddress sender;
+	quint16 senderPort;
+
 	while (mAnnouncer->hasPendingDatagrams())
 	{
-		QByteArray datagram;
-		datagram.resize(mAnnouncer->pendingDatagramSize());
-		QHostAddress sender;
-		quint16 senderPort;
-
+		if (datagram.size() != mAnnouncer->pendingDatagramSize())	
+			datagram.resize(mAnnouncer->pendingDatagramSize());
+		
+		// Read pending UDP datagram
 		mAnnouncer->readDatagram(datagram.data(), datagram.size(),
 			&sender, &senderPort);
 
@@ -86,12 +103,15 @@ void MainWindow::onReadyRead()
 
 		unsigned char protocolVersion = datagram.at(0),
 			deviceNameSize = datagram.at(1);
-		QString deviceName = QString(datagram.data()+2);
 
+		QString deviceName = QByteArray(datagram.data()+2, deviceNameSize);
+		QString remoteIp = sender.toString();
+
+		// Make sure we don't already know this device
 		bool exists = false;
 		for (auto it = mDevices.begin(); it != mDevices.end(); ++it)
 		{
-			if ((*it).first == deviceName && (*it).second == sender.toString())
+			if ((*it).first == deviceName && (*it).second == remoteIp)
 			{
 				exists = true;
 				break;
@@ -100,8 +120,12 @@ void MainWindow::onReadyRead()
 
 		if (!exists)
 		{
-			ui->listDevices->addItem(deviceName + " - (" + sender.toString() + ")");
-			mDevices.push_back(QPair<QString, QString>(deviceName, sender.toString()));
+			// XXX: Protocol v3 indicates that audio can't be streamed, and v4
+			// indicates that we can stream audio. However, the user can choose
+			// to turn off audio even on v4. Maybe in the future we could indicate
+			// that.
+			ui->listDevices->addItem(QString("%1 - (%2)").arg(deviceName, remoteIp));
+			mDevices.push_back(QPair<QString, QString>(deviceName, remoteIp));
 		}
 	}
 }
@@ -109,20 +133,5 @@ void MainWindow::onReadyRead()
 void MainWindow::onClickWebsite()
 {
 	QDesktopServices::openUrl(QUrl("http://screen.bbqdroid.org/"));
-}
-//----------------------------------------------------
-void MainWindow::notifyScreenClose(ScreenForm* form)
-{
-	mFormToDelete = form;
-	mKillTimerId = startTimer(700);
-}
-//----------------------------------------------------
-void MainWindow::timerEvent(QTimerEvent* evt)
-{
-	killTimer(mKillTimerId);
-	delete mFormToDelete;
-	mFormToDelete = nullptr;
-
-	show();
 }
 //----------------------------------------------------

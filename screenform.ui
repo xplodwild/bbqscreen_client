@@ -84,7 +84,7 @@
   <customwidget>
    <class>ShrinkableQLabel</class>
    <extends>QLabel</extends>
-   <header>screenform.h</header>
+   <header>ShrinkableQLabel.h</header>
   </customwidget>
  </customwidgets>
  <resources/>

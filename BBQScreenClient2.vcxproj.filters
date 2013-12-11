@@ -71,6 +71,15 @@
     <ClCompile Include="QStreamDecoder.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="ShrinkableQLabel.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="GeneratedFiles\Debug\moc_ShrinkableQLabel.cpp">
+      <Filter>Generated Files\Debug</Filter>
+    </ClCompile>
+    <ClCompile Include="GeneratedFiles\Release\moc_ShrinkableQLabel.cpp">
+      <Filter>Generated Files\Release</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="stdafx.h">
@@ -100,6 +109,9 @@
       <Filter>Form Files</Filter>
     </CustomBuild>
     <CustomBuild Include="QStreamDecoder.h">
+      <Filter>Header Files</Filter>
+    </CustomBuild>
+    <CustomBuild Include="ShrinkableQLabel.h">
       <Filter>Header Files</Filter>
     </CustomBuild>
   </ItemGroup>
