@@ -52,29 +52,31 @@
    </item>
    <item row="1" column="0" colspan="2">
     <widget class="ShrinkableQLabel" name="lblDisplay">
-     <property name="sizePolicy">
-      <sizepolicy hsizetype="Minimum" vsizetype="Minimum">
-       <horstretch>0</horstretch>
-       <verstretch>0</verstretch>
-      </sizepolicy>
+     <property name="mouseTracking">
+      <bool>true</bool>
      </property>
-     <property name="font">
-      <font>
-       <family>Trebuchet MS</family>
-       <pointsize>10</pointsize>
-      </font>
+     <property name="focusPolicy">
+      <enum>Qt::NoFocus</enum>
      </property>
-     <property name="styleSheet">
-      <string notr="true">color:white;</string>
+     <property name="backgroundBrush">
+      <brush brushstyle="SolidPattern">
+       <color alpha="255">
+        <red>0</red>
+        <green>0</green>
+        <blue>0</blue>
+       </color>
+      </brush>
      </property>
-     <property name="text">
-      <string>Loading first frame...</string>
-     </property>
-     <property name="scaledContents">
+     <property name="interactive">
       <bool>false</bool>
      </property>
-     <property name="alignment">
-      <set>Qt::AlignCenter</set>
+     <property name="sceneRect">
+      <rectf>
+       <x>0.000000000000000</x>
+       <y>0.000000000000000</y>
+       <width>0.000000000000000</width>
+       <height>0.000000000000000</height>
+      </rectf>
      </property>
     </widget>
    </item>
@@ -83,7 +85,7 @@
  <customwidgets>
   <customwidget>
    <class>ShrinkableQLabel</class>
-   <extends>QLabel</extends>
+   <extends>QGraphicsView</extends>
    <header>ShrinkableQLabel.h</header>
   </customwidget>
  </customwidgets>

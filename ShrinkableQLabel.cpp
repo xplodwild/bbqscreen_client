@@ -1,11 +1,26 @@
 #include "stdafx.h"
 #include "ShrinkableQLabel.h"
 
-//----------------------------------------------------
-ShrinkableQLabel::ShrinkableQLabel(QWidget* parent /* = 0 */) : QLabel(parent),
-	mHighQuality(false)
-{
+#include <QtGui/QPainter>
+#include <QtOpenGL/QGLWidget>
 
+//----------------------------------------------------
+ShrinkableQLabel::ShrinkableQLabel(QWidget* parent /* = 0 */) : QGraphicsView(parent),
+	mHighQuality(false), mLastImagePainted(true)
+{
+	this->setFocusPolicy(Qt::FocusPolicy::NoFocus);
+
+	// Setup OpenGL rendering context
+	QGLFormat fmt;
+	fmt.setSampleBuffers(true);
+	fmt.setSamples(2);
+	setViewport(new QGLWidget(fmt));
+
+	// Setup our scene (which is just the pixmap)
+	mScene = new QGraphicsScene(this);
+	setScene(mScene);
+	mPixmapItem = new QGraphicsPixmapItem(0);
+	mScene->addItem(mPixmapItem);
 }
 //----------------------------------------------------
 void ShrinkableQLabel::setHighQuality(bool high)
@@ -15,43 +30,31 @@ void ShrinkableQLabel::setHighQuality(bool high)
 //---------------------------------------------------
 void ShrinkableQLabel::paintEvent(QPaintEvent *aEvent)
 {
-	QLabel::paintEvent(aEvent);
-	_displayImage();
+	if (!mLastImagePainted)
+	{
+		QGraphicsView::paintEvent(aEvent);
+		_displayImage();
+		fitInView(0, 0, mScene->width(), mScene->height(), Qt::KeepAspectRatio);
+	}
 }
 //----------------------------------------------------
-void ShrinkableQLabel::setPixmap(const QPixmap& aPicture)
+void ShrinkableQLabel::setImage(const QImage& aPicture)
 {
-	mSource = mCurrent = aPicture;
+	mSource = aPicture;
+	mLastImagePainted = false;
 	repaint();
 }
 //----------------------------------------------------
 void ShrinkableQLabel::_displayImage()
 {
-	if (mSource.isNull()) //no image was set, don't draw anything
-		return;
-
-	float cw = width(), ch = height();
-	float pw = mCurrent.width(), ph = mCurrent.height();
-
-	if (pw > cw && ph > ch && pw/cw > ph/ch || //both width and high are bigger, ratio at high is bigger or
-		pw > cw && ph <= ch || //only the width is bigger or
-		pw < cw && ph < ch && cw/pw < ch/ph //both width and height is smaller, ratio at width is smaller
-		)
-		mCurrent = mSource.scaledToWidth(cw, mHighQuality ? Qt::SmoothTransformation : Qt::TransformationMode::FastTransformation);
-	else if (pw > cw && ph > ch && pw/cw <= ph/ch || //both width and high are bigger, ratio at width is bigger or
-		ph > ch && pw <= cw || //only the height is bigger or
-		pw < cw && ph < ch && cw/pw > ch/ph //both width and height is smaller, ratio at height is smaller
-		)
-		mCurrent = mSource.scaledToHeight(ch, mHighQuality ? Qt::SmoothTransformation : Qt::TransformationMode::FastTransformation);
-
-	int x = (cw - mCurrent.width())/2, y = (ch - mCurrent.height())/2;
-
-	QPainter paint(this);
-	paint.drawPixmap(x, y, mCurrent);
+	QPixmap pixmap = QPixmap::fromImage(mSource);
+	mPixmapItem->setTransformationMode(mHighQuality ? Qt::SmoothTransformation : Qt::TransformationMode::FastTransformation);
+	mPixmapItem->setPixmap(pixmap);
+	mScene->setSceneRect(mPixmapItem->boundingRect());
 }
 //----------------------------------------------------
-QSize ShrinkableQLabel::getRenderSize()
+QSizeF ShrinkableQLabel::getRenderSize()
 {
-	return mCurrent.size();
+	return mScene->sceneRect().size();
 }
 //----------------------------------------------------

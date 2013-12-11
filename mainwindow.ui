@@ -175,10 +175,10 @@ font-weight:bold;</string>
       <item row="0" column="0" colspan="2">
        <widget class="QCheckBox" name="cbHighQuality">
         <property name="text">
-         <string>HD processing (uses more CPU)</string>
+         <string>HD processing (slower)</string>
         </property>
         <property name="checked">
-         <bool>true</bool>
+         <bool>false</bool>
         </property>
        </widget>
       </item>

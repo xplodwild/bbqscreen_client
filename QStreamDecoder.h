@@ -27,6 +27,9 @@
 #include <QThread>
 #include <QMutex>
 
+#include <thread>
+#include <mutex>
+
 #ifdef NEW_FFMPEG_API
 namespace ffmpeg {
 extern "C" {
@@ -62,11 +65,16 @@ signals:
 protected:
 	void initialize();
 
+	void playbackAudioThread();
+
 	bool decodeVideoFrame(unsigned char* bytes, int size);
 	bool decodeAudioFrame(unsigned char* bytes, int size);
 
 protected:
 	static QMutex mMutex;
+	std::thread mAudioPlaybackThread;
+	std::mutex mAudioMutex;
+	bool mAudioPlaybackRunning;
 
 	unsigned char* mInput;
 	int mInputSize;
@@ -83,7 +91,9 @@ protected:
 
 	QAudioOutput* mAudioOutput;
 	QIODevice* mAudioIO;
-	bool mBuffered;
+	QByteArray mAudioBuffer;
+	QList<int> mAudioBufferSize;
+	int mBuffered;
 
 	QImage mLastFrame;
 	ffmpeg::SwsContext* mConvertCtx;

@@ -123,8 +123,8 @@ private:
 	int mOrientationOffset;
 	QPoint mOriginalSize;
 	QTime mFrameTimer;
-	QPixmap mLastPixmap;
-	bool mLastPixmapDisplayed;
+	QImage mLastImage;
+	bool mLastImageDisplayed;
 
 	// Local input info
 	bool mIsMouseDown;

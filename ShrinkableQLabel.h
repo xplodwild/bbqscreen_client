@@ -3,24 +3,30 @@
 
 #include <QPixmap>
 #include <QtGui/QPaintEvent>
-#include <QtWidgets/QLabel>
+#include <QtWidgets/QGraphicsView>
 
-class ShrinkableQLabel : public QLabel
+class ShrinkableQLabel : public QGraphicsView
 {
 	Q_OBJECT;
 
 public:
 	ShrinkableQLabel(QWidget* parent = 0);
 	void paintEvent(QPaintEvent *aEvent);
-	void setPixmap(const QPixmap& aPicture);
+	void setImage(const QImage& aPicture);
 	void setHighQuality(bool high);
-	QSize getRenderSize();
+	QSizeF getRenderSize();
+
+	void mousePressEvent(QMouseEvent *event) { event->ignore(); }
+	void mouseReleaseEvent(QMouseEvent *event) { event->ignore(); }
+	void mouseMoveEvent(QMouseEvent *event) { event->ignore(); }
 
 protected:
 	void _displayImage();
+	QGraphicsScene* mScene;
+	QGraphicsPixmapItem* mPixmapItem;
 
-	QPixmap mSource;
-	QPixmap mCurrent;
+	bool mLastImagePainted;
+	QImage mSource;
 	bool mHighQuality;
 };
 

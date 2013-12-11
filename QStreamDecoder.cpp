@@ -22,6 +22,9 @@
 #include <QtMultimedia/QAudioFormat>
 #include <QtMultimedia/QAudioOutput>
 
+#define AUDIO_BUFFERING 8
+#define MAX_AUDIO_DATA_PENDING 50000
+
 QMutex QStreamDecoder::mMutex;
 
 //------------------------------------------
@@ -33,13 +36,18 @@ QStreamDecoder::QStreamDecoder(bool isAudio) :
 	mRGBBuffer(nullptr),
 	mConvertCtx(nullptr),
 	mIsAudio(isAudio),
-	mBuffered(false)
+	mBuffered(0)
 {
 
 }
 //------------------------------------------
 QStreamDecoder::~QStreamDecoder()
 {
+	mAudioPlaybackRunning = false;
+	if (mAudioPlaybackThread.joinable())
+	{
+		mAudioPlaybackThread.join();
+	}
 }
 //------------------------------------------
 void QStreamDecoder::decodeFrame(unsigned char* bytes, int size, bool lastRendered)
@@ -115,6 +123,9 @@ void QStreamDecoder::initialize()
 			return;
 		}
 
+		mAudioPlaybackRunning = true;
+		mAudioPlaybackThread = std::thread(&QStreamDecoder::playbackAudioThread, this);
+
 		mAudioOutput = new QAudioOutput(format);
 		mAudioIO = mAudioOutput->start();
 	}
@@ -144,6 +155,39 @@ void QStreamDecoder::process()
 	emit decodeFinished(result, mIsAudio);
 }
 //------------------------------------------
+void QStreamDecoder::playbackAudioThread()
+{
+	while (mAudioPlaybackRunning)
+	{
+		// Dequeue an audio frame
+		if (mAudioBufferSize.size() > 0 && mBuffered >= AUDIO_BUFFERING
+			&& mAudioOutput->bytesFree() > 0)
+		{
+			mAudioMutex.lock();
+
+			int bufferSize = mAudioBufferSize.front();
+
+			// If we're too slow/accumulating delay, drop audio frames
+			while (mAudioBuffer.size() > MAX_AUDIO_DATA_PENDING)
+			{
+				bufferSize = mAudioBufferSize.front();
+				mAudioBuffer.remove(0, bufferSize);
+				mAudioBufferSize.pop_front();
+			}
+
+			// Write to our audio channel
+			mAudioIO->write(mAudioBuffer.left(bufferSize));
+			mAudioBuffer.remove(0, bufferSize);
+
+			mAudioMutex.unlock();
+
+			mAudioBufferSize.pop_front();
+		}
+
+		std::this_thread::sleep_for(std::chrono::milliseconds(1));
+	}
+}
+//------------------------------------------
 bool QStreamDecoder::decodeAudioFrame(unsigned char* bytes, int size)
 {
 	if (size <= 0)
@@ -167,17 +211,15 @@ bool QStreamDecoder::decodeAudioFrame(unsigned char* bytes, int size)
 
 		if (out_size > 0)
 		{
-			// A frame has been decoded. Play it if we have another buffer to
-			// reduce audio underrun
-			if (mBuffered)
-			{
-				mAudioIO->write((const char*)mAudioFrame, out_size);
-			}
-			else
-			{
-				mBuffered = true;
-			}
+			// A frame has been decoded. Queue it to our buffer.
+			mAudioMutex.lock();
+			
+			if (mBuffered < AUDIO_BUFFERING) mBuffered++;
 
+			mAudioBuffer.append((const char*)mAudioFrame, out_size);
+			mAudioBufferSize.push_back(out_size);
+			
+			mAudioMutex.unlock();
 			hasOutput = true;
 		}
 		else
@@ -254,19 +296,19 @@ bool QStreamDecoder::decodeVideoFrame(unsigned char* bytes, int size)
 			/*if (w > 1920 || h > 1920)
 				qDebug() << "Unexpected size! " << w << " x " << h;*/
 
-			mConvertCtx = ffmpeg::sws_getCachedContext(mConvertCtx, w, h, mCodecCtx->pix_fmt, w, h, ffmpeg::PIX_FMT_RGB24, SWS_BICUBIC, NULL, NULL, NULL);
-
-			if(mConvertCtx == NULL)
-			{
-				qDebug() << "Cannot initialize the conversion context!";
-				return false;
-			}
-
-			// Convert to RGB
-			ffmpeg::sws_scale(mConvertCtx, mPicture->data, mPicture->linesize, 0, mCodecCtx->height, mPictureRGB->data, mPictureRGB->linesize);
-
 			if (mLastRendered)
 			{
+				mConvertCtx = ffmpeg::sws_getCachedContext(mConvertCtx, w, h, mCodecCtx->pix_fmt, w, h, ffmpeg::PIX_FMT_RGB24, SWS_BICUBIC, NULL, NULL, NULL);
+
+				if(mConvertCtx == NULL)
+				{
+					qDebug() << "Cannot initialize the conversion context!";
+					return false;
+				}
+			
+				// Convert to RGB
+				ffmpeg::sws_scale(mConvertCtx, mPicture->data, mPicture->linesize, 0, mCodecCtx->height, mPictureRGB->data, mPictureRGB->linesize);
+
 				// Convert the frame to QImage
 				if (mLastFrame.width() != w ||
 					mLastFrame.height() != h ||

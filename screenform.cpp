@@ -83,7 +83,7 @@ ScreenForm::ScreenForm(MainWindow* win, QWidget *parent) :
 	// On protocol v3, the client runs at a refresh rate of 35 fps whereas
 	// the server is locked at 25 fps. On protocol v4, the stream is at 60fps
 	// This is to ensure both smoothness and responsiveness
-	startTimer(1000/35, Qt::PreciseTimer);
+	startTimer(1000/60, Qt::PreciseTimer);
 }
 //----------------------------------------------------
 ScreenForm::~ScreenForm()
@@ -200,7 +200,7 @@ void ScreenForm::processPendingDatagrams()
 			{
 				unsigned char* buff = new unsigned char[frameSize];
 				memcpy(buff, mGlobalBytesBuffer.data(), frameSize);
-				mDecoder.decodeFrame(buff, frameSize, mLastPixmapDisplayed);
+				mDecoder.decodeFrame(buff, frameSize, mLastImageDisplayed);
 				mDecoder.process();
 				//mVideoDecoderThread.start();
 				mGlobalBytesBuffer = mGlobalBytesBuffer.remove(0, frameSize);
@@ -224,7 +224,7 @@ void ScreenForm::onDecodeFinished(bool result, bool isAudio)
 {
 	if (!isAudio && result)
 	{
-		if (mLastPixmapDisplayed)
+		if (mLastImageDisplayed)
 		{
 			QImage img = mDecoder.getLastFrame();
 			//mRotationAngle = orientation * (-90) + mOrientationOffset;
@@ -239,8 +239,10 @@ void ScreenForm::onDecodeFinished(bool result, bool isAudio)
 				img = img.transformed(t, mHighQuality ? Qt::SmoothTransformation : Qt::FastTransformation);
 			}
 
-			mLastPixmap = QPixmap::fromImage(img);
-			mLastPixmapDisplayed = false;
+			mLastImage = img;
+			mLastImageDisplayed = false;
+			ui->lblDisplay->setImage(mLastImage);
+			mLastImageDisplayed = true;
 
 			mTotalFrameReceived++;
 			
@@ -345,12 +347,11 @@ void ScreenForm::timerEvent(QTimerEvent *evt)
 	else
 	{
 		// Frame updater timer
-
-		if (!mLastPixmapDisplayed)
+		if (!mLastImageDisplayed)
 		{
 			// Display next frame
-			ui->lblDisplay->setPixmap(mLastPixmap);
-			mLastPixmapDisplayed = true;
+			ui->lblDisplay->setImage(mLastImage);
+			mLastImageDisplayed = true;
 		}
 
 		if (mTimeSinceLastTouchEvent.elapsed() > 16 && mTouchEventPacket.size() > 0)
@@ -472,7 +473,7 @@ void ScreenForm::mousePressEvent(QMouseEvent *evt)
 		mIsMouseDown = true;
 		float posX = evt->x();
 		float posY = evt->y();
-		QSize imgSz = ui->lblDisplay->getRenderSize();
+		QSizeF imgSz = ui->lblDisplay->getRenderSize();
 
 		posX = posX - (width() / 2.0f - imgSz.width() / 2.0f);
 		posX = posX * ((float) width() / (float) imgSz.width());
@@ -494,7 +495,7 @@ void ScreenForm::mouseReleaseEvent(QMouseEvent *evt)
 		mIsMouseDown = false;
 		float posX = evt->x();
 		float posY = evt->y();
-		QSize imgSz = ui->lblDisplay->getRenderSize();
+		QSizeF imgSz = ui->lblDisplay->getRenderSize();
 
 		posX = posX - (width() / 2.0f - imgSz.width() / 2.0f);
 		posX = posX * ((float) width() / (float) imgSz.width());
@@ -515,7 +516,7 @@ void ScreenForm::mouseMoveEvent(QMouseEvent *evt)
 	{
 		float posX = evt->x();
 		float posY = evt->y();
-		QSize imgSz = ui->lblDisplay->getRenderSize();
+		QSizeF imgSz = ui->lblDisplay->getRenderSize();
 
 		posX = posX - (width() / 2.0f - imgSz.width() / 2.0f);
 		posX = posX * ((float) width() / (float) imgSz.width());
