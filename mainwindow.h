@@ -20,6 +20,7 @@
 #define MAINWINDOW_H
 
 #include <QDialog>
+#include <QtNetwork/QUdpSocket>
 
 
 namespace Ui {
@@ -39,14 +40,21 @@ public:
 
 	void timerEvent(QTimerEvent* evt);
 
-	private slots:
-		void onClickConnect();
-		void onClickWebsite();
+private slots:
+	void onClickConnect();
+	void onClickWebsite();
+	void onReadyRead();
+	void onSelectDevice(QListWidgetItem* item);
+
 
 private:
 	Ui::MainWindow *ui;
+	QUdpSocket* mAnnouncer;
 	ScreenForm* mFormToDelete;
 	int mKillTimerId;
+
+	// Pair device name, device ip / List order is listWidget of devices
+	QList< QPair<QString, QString> > mDevices;
 
 };
 
