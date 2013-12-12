@@ -128,6 +128,7 @@ void QStreamDecoder::initialize()
 
 		mAudioOutput = new QAudioOutput(format);
 		mAudioIO = mAudioOutput->start();
+		mAudioOutput->setVolume(1.0);
 	}
 }
 //------------------------------------------
@@ -176,7 +177,8 @@ void QStreamDecoder::playbackAudioThread()
 			}
 
 			// Write to our audio channel
-			mAudioIO->write(mAudioBuffer.left(bufferSize));
+			QByteArray frame = mAudioBuffer.left(bufferSize);
+			mAudioIO->write(frame);
 			mAudioBuffer.remove(0, bufferSize);
 
 			mAudioMutex.unlock();
