@@ -44,6 +44,7 @@ MainWindow::MainWindow(QWidget *parent) :
 
 	// Connect UI slots
 	connect(ui->listDevices, SIGNAL(itemClicked(QListWidgetItem*)), this, SLOT(onSelectDevice(QListWidgetItem*)));
+	connect(ui->listDevices, SIGNAL(itemDoubleClicked(QListWidgetItem*)), this, SLOT(onDoubleClickDevice(QListWidgetItem*)));
 	connect(ui->btnBootstrapUSB, SIGNAL(clicked()), this, SLOT(onClickBootstrapUSB()));
 	connect(ui->btnConnect, SIGNAL(clicked()), this, SLOT(onClickConnect()));
 	connect(ui->btnWebsite, SIGNAL(clicked()), this, SLOT(onClickWebsite()));
@@ -51,12 +52,16 @@ MainWindow::MainWindow(QWidget *parent) :
 //----------------------------------------------------
 MainWindow::~MainWindow()
 {
+	delete ui;
+}
+//----------------------------------------------------
+void MainWindow::closeEvent(QCloseEvent* evt)
+{
 	if (mADBProcess)
 	{
 		mADBProcess->kill();
 		delete mADBProcess;
 	}
-	delete ui;
 }
 //----------------------------------------------------
 void MainWindow::onClickConnect()
@@ -91,6 +96,12 @@ void MainWindow::onSelectDevice(QListWidgetItem* item)
 	{
 		ui->ebIP->setText(mDevices.at(index).second);
 	}
+}
+//----------------------------------------------------
+void MainWindow::onDoubleClickDevice(QListWidgetItem* item)
+{
+	onSelectDevice(item);
+	onClickConnect();
 }
 //----------------------------------------------------
 void MainWindow::onDiscoveryReadyRead()

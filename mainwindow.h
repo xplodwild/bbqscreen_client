@@ -37,6 +37,8 @@ public:
 	explicit MainWindow(QWidget *parent = 0);
 	~MainWindow();
 
+	void closeEvent(QCloseEvent* evt);
+
 private slots:
 	void onClickConnect();
 	void onClickWebsite();
@@ -44,6 +46,7 @@ private slots:
 	void onSelectDevice(QListWidgetItem* item);
 	void onClickBootstrapUSB();
 	void onADBProcessFinishes();
+	void onDoubleClickDevice(QListWidgetItem* item);
 
 private:
 	Ui::MainWindow *ui;
