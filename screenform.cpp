@@ -268,38 +268,29 @@ void ScreenForm::onDecodeFinished(bool result, bool isAudio)
 //----------------------------------------------------
 void ScreenForm::onSocketStateChanged()
 {
-	if (mIsConnecting || !isVisible() || !ui || mStopped)
+	if (mStopped || !ui)
+	{
+		// Don't do anything if we stopped or closed the window
 		return;
+	}
 
-	if (mTcpSocket.state() == QAbstractSocket::UnconnectedState)
+	if (mTcpSocket.state() == QAbstractSocket::ConnectedState)
+	{
+		// HACK: For some reason, the widget isn't repainting until the window is resized
+		this->setWindowState(Qt::WindowMaximized);
+		qApp->processEvents();
+		this->setWindowState(Qt::WindowState::WindowMinimized);
+		qApp->processEvents();
+		this->setWindowState(Qt::WindowMaximized);
+		mIsConnecting = false;
+	}
+	else if (mTcpSocket.state() == QAbstractSocket::UnconnectedState)
 	{
 		ui->lblFps->setText("Lost connection with host device. Reconnecting...");
+		ui->lblFps->setVisible(true);
 		mIsConnecting = true;
 
-		QTime connectionTimeout;
-		connectionTimeout.start();
-		int attempt = 1;
-
-		while (mTcpSocket.state() != QAbstractSocket::ConnectedState)
-		{
-			if (!isVisible() || !ui)
-				return;
-
-			ui->lblFps->setText("Connecting... (Attempt " + QString::number(attempt) + "...)");
-			qApp->processEvents();
-
-
-			if (connectionTimeout.elapsed() > 1000)
-			{
-				mTcpSocket.disconnectFromHost();
-				mTcpSocket.waitForDisconnected(1000);
-				mTcpSocket.connectToHost(QHostAddress(mHost), 9876);
-				connectionTimeout.restart();
-				attempt++;
-			}
-		}
-
-		mIsConnecting = false;
+		connectTo(mHost);
 	}
 }
 //----------------------------------------------------
