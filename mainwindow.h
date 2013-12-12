@@ -29,6 +29,13 @@ namespace Ui {
 
 class ScreenForm;
 
+struct Device
+{
+	QString name;
+	QString address;
+	QTime lastPing;
+};
+
 class MainWindow : public QDialog
 {
 	Q_OBJECT
@@ -38,6 +45,7 @@ public:
 	~MainWindow();
 
 	void closeEvent(QCloseEvent* evt);
+	void timerEvent(QTimerEvent* evt);
 
 private slots:
 	void onClickConnect();
@@ -52,10 +60,9 @@ private:
 	Ui::MainWindow *ui;
 	QUdpSocket* mAnnouncer;
 	ScreenForm* mFormToDelete;
-	int mKillTimerId;
 
 	// Pair device name, device ip / List order is listWidget of devices
-	QList< QPair<QString, QString> > mDevices;
+	QList<Device*> mDevices;
 
 	QProcess* mADBProcess;
 

@@ -48,6 +48,9 @@ MainWindow::MainWindow(QWidget *parent) :
 	connect(ui->btnBootstrapUSB, SIGNAL(clicked()), this, SLOT(onClickBootstrapUSB()));
 	connect(ui->btnConnect, SIGNAL(clicked()), this, SLOT(onClickConnect()));
 	connect(ui->btnWebsite, SIGNAL(clicked()), this, SLOT(onClickWebsite()));
+
+	// Start timeout timer
+	startTimer(500);
 }
 //----------------------------------------------------
 MainWindow::~MainWindow()
@@ -57,10 +60,28 @@ MainWindow::~MainWindow()
 //----------------------------------------------------
 void MainWindow::closeEvent(QCloseEvent* evt)
 {
+	Q_UNUSED(evt);
 	if (mADBProcess)
 	{
 		mADBProcess->kill();
 		delete mADBProcess;
+	}
+}
+//----------------------------------------------------
+void MainWindow::timerEvent(QTimerEvent* evt)
+{
+	Q_UNUSED(evt);
+
+	// See if we have devices that disappeared. We make them timeout after 3 seconds.
+	for (auto it = mDevices.begin(); it != mDevices.end(); ++it)
+	{
+		if ((*it)->lastPing.elapsed() > 3000)
+		{
+			ui->listDevices->takeItem(mDevices.indexOf(*it));
+			delete (*it);
+			it = mDevices.erase(it);
+			break;
+		}
 	}
 }
 //----------------------------------------------------
@@ -94,7 +115,7 @@ void MainWindow::onSelectDevice(QListWidgetItem* item)
 	int index = ui->listDevices->currentRow();
 	if (index >= 0)
 	{
-		ui->ebIP->setText(mDevices.at(index).second);
+		ui->ebIP->setText(mDevices.at(index)->address);
 	}
 }
 //----------------------------------------------------
@@ -134,8 +155,9 @@ void MainWindow::onDiscoveryReadyRead()
 		bool exists = false;
 		for (auto it = mDevices.begin(); it != mDevices.end(); ++it)
 		{
-			if ((*it).first == deviceName && (*it).second == remoteIp)
+			if ((*it)->name == deviceName && (*it)->address == remoteIp)
 			{
+				(*it)->lastPing.restart();
 				exists = true;
 				break;
 			}
@@ -147,8 +169,13 @@ void MainWindow::onDiscoveryReadyRead()
 			// indicates that we can stream audio. However, the user can choose
 			// to turn off audio even on v4. Maybe in the future we could indicate
 			// that.
+			Device* device = new Device;
+			device->name = deviceName;
+			device->address = remoteIp;
+			device->lastPing.start();
+			
 			ui->listDevices->addItem(QString("%1 - (%2)").arg(deviceName, remoteIp));
-			mDevices.push_back(QPair<QString, QString>(deviceName, remoteIp));
+			mDevices.push_back(device);
 		}
 	}
 }
