@@ -42,7 +42,8 @@ private slots:
 	void onClickWebsite();
 	void onDiscoveryReadyRead();
 	void onSelectDevice(QListWidgetItem* item);
-
+	void onClickBootstrapUSB();
+	void onADBProcessFinishes();
 
 private:
 	Ui::MainWindow *ui;
@@ -52,6 +53,8 @@ private:
 
 	// Pair device name, device ip / List order is listWidget of devices
 	QList< QPair<QString, QString> > mDevices;
+
+	QProcess* mADBProcess;
 
 };
 

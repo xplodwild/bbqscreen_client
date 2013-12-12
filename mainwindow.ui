@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>627</width>
-    <height>414</height>
+    <height>432</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -198,6 +198,12 @@ font-weight:bold;</string>
       </item>
       <item row="0" column="2">
        <widget class="QLabel" name="label_4">
+        <property name="sizePolicy">
+         <sizepolicy hsizetype="Maximum" vsizetype="Preferred">
+          <horstretch>0</horstretch>
+          <verstretch>0</verstretch>
+         </sizepolicy>
+        </property>
         <property name="text">
          <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-weight:600;&quot;&gt;Shortcuts : &lt;/span&gt;&lt;span style=&quot; font-weight:600; color:#ff0000;&quot;&gt;CTRL + &lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
         </property>
@@ -206,7 +212,21 @@ font-weight:bold;</string>
       <item row="0" column="3" rowspan="2">
        <widget class="QLabel" name="label_5">
         <property name="text">
-         <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;'O' : Offset orientation by -90°&lt;br/&gt;'P' : Offset orientation by 90°&lt;br/&gt;'F' : Full-screen toggle&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+         <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-weight:600;&quot;&gt;'O' &lt;/span&gt;: Offset orientation by -90°&lt;br/&gt;&lt;span style=&quot; font-weight:600;&quot;&gt;'P'&lt;/span&gt; : Offset orientation by 90°&lt;br/&gt;&lt;span style=&quot; font-weight:600;&quot;&gt;'F' &lt;/span&gt;: Full-screen toggle&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+        </property>
+       </widget>
+      </item>
+      <item row="2" column="0">
+       <widget class="QPushButton" name="btnBootstrapUSB">
+        <property name="text">
+         <string>Bootstrap non-root USB method</string>
+        </property>
+       </widget>
+      </item>
+      <item row="3" column="0" colspan="2">
+       <widget class="QLabel" name="label_6">
+        <property name="text">
+         <string>Go to our website for more information about USB method</string>
         </property>
        </widget>
       </item>

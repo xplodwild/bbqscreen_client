@@ -24,10 +24,16 @@
 #include <QUrl>
 #include <QtNetwork/QUdpSocket>
 
+#if defined(PLAT_WINDOWS)
+#define ADB_PATH "prebuilts/adb.exe"
+#elif defined(PLAT_LINUX) || defined(PLAT_APPLE)
+#define ADB_PATH "prebuilts/adb"
+#endif
+
 //----------------------------------------------------
 MainWindow::MainWindow(QWidget *parent) :
 	QDialog(parent),
-	ui(new Ui::MainWindow)
+	ui(new Ui::MainWindow), mADBProcess(NULL)
 {
 	ui->setupUi(this);
 
@@ -38,12 +44,18 @@ MainWindow::MainWindow(QWidget *parent) :
 
 	// Connect UI slots
 	connect(ui->listDevices, SIGNAL(itemClicked(QListWidgetItem*)), this, SLOT(onSelectDevice(QListWidgetItem*)));
+	connect(ui->btnBootstrapUSB, SIGNAL(clicked()), this, SLOT(onClickBootstrapUSB()));
 	connect(ui->btnConnect, SIGNAL(clicked()), this, SLOT(onClickConnect()));
 	connect(ui->btnWebsite, SIGNAL(clicked()), this, SLOT(onClickWebsite()));
 }
 //----------------------------------------------------
 MainWindow::~MainWindow()
 {
+	if (mADBProcess)
+	{
+		mADBProcess->kill();
+		delete mADBProcess;
+	}
 	delete ui;
 }
 //----------------------------------------------------
@@ -133,5 +145,28 @@ void MainWindow::onDiscoveryReadyRead()
 void MainWindow::onClickWebsite()
 {
 	QDesktopServices::openUrl(QUrl("http://screen.bbqdroid.org/"));
+}
+//----------------------------------------------------
+void MainWindow::onClickBootstrapUSB()
+{
+	if (!mADBProcess)
+	{
+		mADBProcess = new QProcess(this);
+		connect(mADBProcess, SIGNAL(finished(int, QProcess::ExitStatus)), this, SLOT(onADBProcessFinishes()));
+	}
+	
+	QStringList args;
+	args << "shell";
+	args << "/data/data/org.bbqdroid.bbqscreen/files/bbqscreen";
+	args << "-s 50";
+	args << "-720";
+
+	mADBProcess->start("prebuilts/adb.exe", args);
+}
+//----------------------------------------------------
+void MainWindow::onADBProcessFinishes()
+{
+	// If the process crashed, reboot it
+	onClickBootstrapUSB();
 }
 //----------------------------------------------------

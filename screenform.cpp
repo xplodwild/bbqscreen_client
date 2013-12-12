@@ -28,16 +28,6 @@
 #include <QtNetwork/QHostAddress>
 #include <QtGui/QPixmap>
 
-#if defined(_WIN32) || defined(_WIN64)
-#define PLAT_WINDOWS
-#elif defined(__linux) || defined(__unix) || defined(__posix)
-#define PLAT_LINUX
-#elif defined(__APPLE__)
-#define PLAT_APPLE
-#else
-#warning "Unsupported keyboard platform"
-#endif
-
 #ifdef PLAT_APPLE
  #include <Carbon/Carbon.h>
 #endif
@@ -83,7 +73,7 @@ ScreenForm::ScreenForm(MainWindow* win, QWidget *parent) :
 	// On protocol v3, the client runs at a refresh rate of 35 fps whereas
 	// the server is locked at 25 fps. On protocol v4, the stream is at 60fps
 	// This is to ensure both smoothness and responsiveness
-	startTimer(1000/60, Qt::PreciseTimer);
+	startTimer(1, Qt::PreciseTimer);
 }
 //----------------------------------------------------
 ScreenForm::~ScreenForm()
@@ -406,6 +396,8 @@ void ScreenForm::keyReleaseEvent(QKeyEvent *evt)
 		}
 		break;
 	}
+
+	evt->accept();
 }
 //----------------------------------------------------
 void ScreenForm::keyPressEvent(QKeyEvent *evt)
@@ -476,6 +468,8 @@ void ScreenForm::mousePressEvent(QMouseEvent *evt)
 		} else {
 			sendTouchInput(TET_DOWN, 1, pos.x() + 30, pos.y() + 30);
 		}
+
+		evt->accept();
 	}
 }
 //----------------------------------------------------
@@ -498,6 +492,8 @@ void ScreenForm::mouseReleaseEvent(QMouseEvent *evt)
 		} else {
 			sendTouchInput(TET_UP, 1, pos.x(), pos.y());
 		}
+
+		evt->accept();
 	}
 }
 //----------------------------------------------------
@@ -514,6 +510,8 @@ void ScreenForm::mouseMoveEvent(QMouseEvent *evt)
 
 		QPoint pos = getScreenSpacePoint(posX, posY);
 		sendTouchInput(TET_MOVE, 0, pos.x(), pos.y());
+
+		evt->accept();
 	}
 }
 //----------------------------------------------------
