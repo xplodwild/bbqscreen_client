@@ -266,12 +266,6 @@ void ScreenForm::onSocketStateChanged()
 
 	if (mTcpSocket.state() == QAbstractSocket::ConnectedState)
 	{
-		// HACK: For some reason, the widget isn't repainting until the window is resized
-		this->setWindowState(Qt::WindowMaximized);
-		qApp->processEvents();
-		this->setWindowState(Qt::WindowState::WindowMinimized);
-		qApp->processEvents();
-		this->setWindowState(Qt::WindowMaximized);
 		mIsConnecting = false;
 	}
 	else if (mTcpSocket.state() == QAbstractSocket::UnconnectedState)

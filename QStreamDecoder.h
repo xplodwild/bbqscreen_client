@@ -30,16 +30,8 @@
 #include <thread>
 #include <mutex>
 
-#ifdef NEW_FFMPEG_API
-namespace ffmpeg {
-extern "C" {
-#include <libavcodec/avcodec.h>
-#include <libswscale/swscale.h>
-}
-}
-#else
-#include "QTFFmpegWrapper/ffmpeg.h"
-#endif
+#include <QTFFmpegWrapper/ffmpeg.h>
+
 
 class QStreamDecoder : public QObject
 {
@@ -83,11 +75,13 @@ protected:
 	bool mIsAudio;
 	ffmpeg::AVCodec* mCodec;
 	ffmpeg::AVCodecContext* mCodecCtx;
+	ffmpeg::SwrContext* mResampleCtx;
 	ffmpeg::AVPacket mPacket;
 	ffmpeg::AVFrame* mPicture;
 	ffmpeg::AVFrame* mPictureRGB;
-	unsigned char* mAudioFrame;
+	ffmpeg::AVFrame* mAudioFrame;
 	unsigned char* mRGBBuffer;
+	uint8_t* mResampleBuffer;
 
 	QAudioOutput* mAudioOutput;
 	QIODevice* mAudioIO;

@@ -42,6 +42,9 @@ extern "C" {
 #include "libavutil/avstring.h"
 //#include "libavutil/internal.h"
 #include "libswscale/swscale.h"
+#include "libswresample/swresample.h"
+#include "libavutil/opt.h"
+#include "libavutil/channel_layout.h"
 }
 }
 

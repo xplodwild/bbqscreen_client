@@ -4,7 +4,7 @@
 
 TEMPLATE = app
 TARGET = BBQScreenClient2
-DESTDIR = ./Win32/Debug
+DESTDIR = ./Win64/Debug
 QT += core multimedia network widgets gui multimediawidgets
 CONFIG += debug
 DEFINES += QT_DLL QT_MULTIMEDIA_LIB QT_MULTIMEDIAWIDGETS_LIB QT_NETWORK_LIB QT_WIDGETS_LIB
