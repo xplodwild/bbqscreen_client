@@ -55,6 +55,7 @@ private slots:
 	void onClickBootstrapUSB();
 	void onADBProcessFinishes();
 	void onDoubleClickDevice(QListWidgetItem* item);
+	void onUpdateChecked();
 
 private:
 	Ui::MainWindow *ui;

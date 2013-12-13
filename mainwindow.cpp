@@ -23,6 +23,10 @@
 #include <QDesktopServices>
 #include <QUrl>
 #include <QtNetwork/QUdpSocket>
+#include <QtNetwork/QNetworkAccessManager>
+#include <QtNetwork/QNetworkReply>
+
+#define CLIENT_VERSION "2.2.0"
 
 #if defined(PLAT_WINDOWS)
 #define ADB_PATH "prebuilts/adb.exe"
@@ -48,6 +52,22 @@ MainWindow::MainWindow(QWidget *parent) :
 	connect(ui->btnBootstrapUSB, SIGNAL(clicked()), this, SLOT(onClickBootstrapUSB()));
 	connect(ui->btnConnect, SIGNAL(clicked()), this, SLOT(onClickConnect()));
 	connect(ui->btnWebsite, SIGNAL(clicked()), this, SLOT(onClickWebsite()));
+
+	// Check if we have an update available
+	QNetworkAccessManager* netAM = new QNetworkAccessManager(this);
+#if defined(PLAT_WINDOWS)
+	QNetworkRequest request(QUrl("http://screen.bbqdroid.org/downloads/VERSION_WINDOWS"));
+#elif defined(PLAT_LINUX)
+	QNetworkRequest request(QUrl("http://screen.bbqdroid.org/downloads/VERSION_LINUX"));
+#elif defined(PLAT_APPLE)
+	QNetworkRequest request(QUrl("http://screen.bbqdroid.org/downloads/VERSION_OSX"));
+#else
+#warning "Unrecognized platform for update check"
+#endif
+	QNetworkReply* reply = netAM->get(request);
+	connect(reply, SIGNAL(finished()), this, SLOT(onUpdateChecked()));
+
+	ui->lblClientVersion->setText("Client version " CLIENT_VERSION);
 
 	// Start timeout timer
 	startTimer(500);
@@ -206,5 +226,20 @@ void MainWindow::onADBProcessFinishes()
 {
 	// If the process crashed, reboot it
 	onClickBootstrapUSB();
+}
+//----------------------------------------------------
+void MainWindow::onUpdateChecked()
+{
+	QNetworkReply* reply = (QNetworkReply*) QObject::sender();
+	QString version = reply->readAll().trimmed();
+	if (version != CLIENT_VERSION) 
+	{
+		if (QMessageBox::information(this, "A new version is available",
+			"A new version of the client (" + version + ") is available!\nClick OK to visit http://screen.bbqdroid.org/",
+			QMessageBox::Ok|QMessageBox::Cancel, QMessageBox::Ok) == QMessageBox::Ok)
+		{
+			QDesktopServices::openUrl(QUrl("http://screen.bbqdroid.org/"));
+		}
+	}
 }
 //----------------------------------------------------

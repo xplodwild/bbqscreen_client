@@ -209,13 +209,6 @@ font-weight:bold;</string>
         </property>
        </widget>
       </item>
-      <item row="2" column="0">
-       <widget class="QPushButton" name="btnBootstrapUSB">
-        <property name="text">
-         <string>Bootstrap non-root USB method</string>
-        </property>
-       </widget>
-      </item>
       <item row="3" column="0" colspan="2">
        <widget class="QLabel" name="label_6">
         <property name="text">
@@ -231,9 +224,16 @@ font-weight:bold;</string>
        </widget>
       </item>
       <item row="3" column="3">
-       <widget class="QLabel" name="label_7">
+       <widget class="QLabel" name="lblClientVersion">
         <property name="text">
          <string>Client version 2.2.0</string>
+        </property>
+       </widget>
+      </item>
+      <item row="2" column="0">
+       <widget class="QPushButton" name="btnBootstrapUSB">
+        <property name="text">
+         <string>Bootstrap non-root USB method</string>
         </property>
        </widget>
       </item>
