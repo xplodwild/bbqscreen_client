@@ -266,7 +266,9 @@ void ScreenForm::onSocketStateChanged()
 
 	if (mTcpSocket.state() == QAbstractSocket::ConnectedState)
 	{
+		ui->lblFps->setText("Connected, loading first frame...");
 		mIsConnecting = false;
+		qApp->processEvents();
 	}
 	else if (mTcpSocket.state() == QAbstractSocket::UnconnectedState)
 	{
@@ -452,10 +454,13 @@ void ScreenForm::mousePressEvent(QMouseEvent *evt)
 		float posY = evt->y();
 		QSizeF imgSz = ui->lblDisplay->getRenderSize();
 
-		posX = posX - (width() / 2.0f - imgSz.width() / 2.0f);
+		posX = posX - ((width() - imgSz.width()) / 2.0f);
 		posX = posX * ((float) width() / (float) imgSz.width());
 		
 		QPoint pos = getScreenSpacePoint(posX, posY);
+
+		if (pos.x() < 0) pos.setX(0);
+		if (pos.y() < 0) pos.setY(0);
 
 		if (evt->button() == Qt::LeftButton) {
 			sendTouchInput(TET_DOWN, 0, pos.x(), pos.y());

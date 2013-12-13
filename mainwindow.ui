@@ -189,13 +189,6 @@ font-weight:bold;</string>
         </property>
        </widget>
       </item>
-      <item row="3" column="3">
-       <widget class="QPushButton" name="btnWebsite">
-        <property name="text">
-         <string>Go to our website</string>
-        </property>
-       </widget>
-      </item>
       <item row="0" column="2">
        <widget class="QLabel" name="label_4">
         <property name="sizePolicy">
@@ -226,7 +219,21 @@ font-weight:bold;</string>
       <item row="3" column="0" colspan="2">
        <widget class="QLabel" name="label_6">
         <property name="text">
-         <string>Go to our website for more information about USB method</string>
+         <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-style:italic;&quot;&gt;Go to our website for more information about USB method&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+        </property>
+       </widget>
+      </item>
+      <item row="2" column="3">
+       <widget class="QPushButton" name="btnWebsite">
+        <property name="text">
+         <string>Go to our website</string>
+        </property>
+       </widget>
+      </item>
+      <item row="3" column="3">
+       <widget class="QLabel" name="label_7">
+        <property name="text">
+         <string>Client version 2.2.0</string>
         </property>
        </widget>
       </item>

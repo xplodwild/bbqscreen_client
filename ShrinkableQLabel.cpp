@@ -55,6 +55,14 @@ void ShrinkableQLabel::_displayImage()
 //----------------------------------------------------
 QSizeF ShrinkableQLabel::getRenderSize()
 {
-	return mScene->sceneRect().size();
+	QSizeF s = QSizeF(mScene->width(), mScene->height());
+	float ratio = 1.0f;
+	if (mScene->height() > mScene->width()) {
+		ratio = (mScene->height() / height());
+	} else {
+		ratio = (mScene->width() / width());
+	}
+
+	return s / ratio;
 }
 //----------------------------------------------------

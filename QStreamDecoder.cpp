@@ -29,7 +29,11 @@
 QMutex QStreamDecoder::mMutex;
 
 static void avlog_cb(void *, int level, const char * szFmt, va_list varg) {
-	qDebug(szFmt, varg);
+	/*
+	if (szFmt != NULL) {
+		qDebug(szFmt, varg);
+	}
+	*/
 }
 
 //------------------------------------------
