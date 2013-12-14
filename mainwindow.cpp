@@ -216,7 +216,8 @@ void MainWindow::onClickBootstrapUSB()
 	QStringList args;
 	args << "shell";
 	args << "/data/data/org.bbqdroid.bbqscreen/files/bbqscreen";
-	args << "-s 50";
+	args << "-s";
+	args << "40";
 	args << "-720";
 
 	mADBProcess->start("prebuilts/adb.exe", args);
