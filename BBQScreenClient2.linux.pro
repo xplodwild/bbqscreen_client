@@ -3,7 +3,7 @@ TEMPLATE = app
 TARGET = BBQScreenClient2
 DESTDIR = ./Linux
 
-QT += core network widgets gui
+QT += core network widgets gui opengl multimedia
 CONFIG += debug
 DEFINES += QT_DLL QT_NETWORK_LIB QT_WIDGETS_LIB
 INCLUDEPATH += ./GeneratedFiles \
@@ -21,15 +21,16 @@ QMAKE_CXXFLAGS = -std=c++11 -DNEW_FFMPEG_API
 
 include(BBQScreenClient2.pri)
 
+# Add the path
+LIBS += -L/usr/local/lib
+
 # Set list of required FFmpeg libraries
 LIBS += -lavutil \
     -lavcodec \
     -lavformat \
     -lswscale \
+    -lswresample \
     -lz
-
-# Add the path
-LIBS += -L/usr/local/lib
 
 # Requied for some C99 defines
 DEFINES += __STDC_CONSTANT_MACROS

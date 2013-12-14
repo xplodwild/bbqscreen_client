@@ -21,6 +21,9 @@
 
 #include <QDialog>
 #include <QtNetwork/QUdpSocket>
+#include <QTime>
+#include <QListWidgetItem>
+#include <QProcess>
 
 
 namespace Ui {

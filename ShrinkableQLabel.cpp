@@ -62,7 +62,7 @@ QSizeF ShrinkableQLabel::getRenderSize()
 	} else {
 		ratio = (mScene->width() / width());
 	}
-
+    qDebug() << "s=" << s << " ratio=" << ratio;
 	return s / ratio;
 }
 //----------------------------------------------------
