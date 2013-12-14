@@ -220,7 +220,11 @@ void MainWindow::onClickBootstrapUSB()
 	args << "40";
 	args << "-720";
 
+#ifndef PLAT_APPLE
 	mADBProcess->start("prebuilts/adb.exe", args);
+#else
+        mADBProcess->start(QDir(QCoreApplication::applicationDirPath()).absolutePath() + "/" + ADB_PATH, args);
+#endif
 }
 //----------------------------------------------------
 void MainWindow::onADBProcessFinishes()
