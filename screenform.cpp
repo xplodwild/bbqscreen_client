@@ -287,7 +287,8 @@ void ScreenForm::timerEvent(QTimerEvent *evt)
 
 	if (evt->timerId() == mConnectionTimerId)
 	{
-		if (mTcpSocket.state() != QAbstractSocket::ConnectedState)
+		if (mTcpSocket.state() != QAbstractSocket::ConnectedState
+			&& mTcpSocket.state() != QAbstractSocket::ConnectingState)
 		{
 			if (mConnectionAttempts < 3)
 			{
