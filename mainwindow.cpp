@@ -30,9 +30,15 @@
 
 #if defined(PLAT_WINDOWS)
 #define ADB_PATH "prebuilts/adb.exe"
-#elif defined(PLAT_LINUX) || defined(PLAT_APPLE)
+#define UPDATE_URL "http://screen.bbqdroid.org/downloads/VERSION_WINDOWS"
+#elif defined(PLAT_LINUX)
 #define ADB_PATH "prebuilts/adb"
+#define UPDATE_URL "http://screen.bbqdroid.org/downloads/VERSION_LINUX"
+#elif defined(PLAT_APPLE)
+#define ADB_PATH "prebuilts/adb"
+#define UPDATE_URL "http://screen.bbqdroid.org/downloads/VERSION_OSX"
 #endif
+
 
 //----------------------------------------------------
 MainWindow::MainWindow(QWidget *parent) :
@@ -55,15 +61,8 @@ MainWindow::MainWindow(QWidget *parent) :
 
 	// Check if we have an update available
 	QNetworkAccessManager* netAM = new QNetworkAccessManager(this);
-#if defined(PLAT_WINDOWS)
-	QNetworkRequest request(QUrl("http://screen.bbqdroid.org/downloads/VERSION_WINDOWS"));
-#elif defined(PLAT_LINUX)
-	QNetworkRequest request(QUrl("http://screen.bbqdroid.org/downloads/VERSION_LINUX"));
-#elif defined(PLAT_APPLE)
-	QNetworkRequest request(QUrl("http://screen.bbqdroid.org/downloads/VERSION_OSX"));
-#else
-#warning "Unrecognized platform for update check"
-#endif
+	QNetworkRequest request(QUrl(UPDATE_URL));
+
 	QNetworkReply* reply = netAM->get(request);
 	connect(reply, SIGNAL(finished()), this, SLOT(onUpdateChecked()));
 
@@ -217,13 +216,13 @@ void MainWindow::onClickBootstrapUSB()
 	args << "shell";
 	args << "/data/data/org.bbqdroid.bbqscreen/files/bbqscreen";
 	args << "-s";
-	args << "40";
+	args << "50";
 	args << "-720";
 
 #ifndef PLAT_APPLE
-	mADBProcess->start("prebuilts/adb.exe", args);
+	mADBProcess->start(ADB_PATH, args);
 #else
-        mADBProcess->start(QDir(QCoreApplication::applicationDirPath()).absolutePath() + "/" + ADB_PATH, args);
+	mADBProcess->start(QDir(QCoreApplication::applicationDirPath()).absolutePath() + "/" + ADB_PATH, args);
 #endif
 }
 //----------------------------------------------------
