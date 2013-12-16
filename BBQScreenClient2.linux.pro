@@ -8,6 +8,7 @@ CONFIG += debug
 DEFINES += QT_DLL QT_NETWORK_LIB QT_WIDGETS_LIB
 INCLUDEPATH += ./GeneratedFiles \
     . \
+	./QTFFmpegWrapper \
     ./GeneratedFiles/Debug \
     $(QTDIR)/../qtmultimedia/include/QtMultimedia \
     $(QTDIR)/../qtmultimedia/include
