@@ -1,19 +1,22 @@
 #include "stdafx.h"
 #include "ShrinkableQLabel.h"
+#include "mainwindow.h"
 
 #include <QtGui/QPainter>
 #include <QtOpenGL/QGLWidget>
 
 //----------------------------------------------------
 ShrinkableQLabel::ShrinkableQLabel(QWidget* parent /* = 0 */) : QGraphicsView(parent),
-	mHighQuality(false), mLastImagePainted(true)
+	mHighQuality(false)
 {
 	this->setFocusPolicy(Qt::FocusPolicy::NoFocus);
 
 	// Setup OpenGL rendering context
 	QGLFormat fmt;
-	fmt.setSampleBuffers(true);
-	fmt.setSamples(2);
+	fmt.setSampleBuffers(false);
+	fmt.setDoubleBuffer(true);
+	fmt.setDirectRendering(true);
+	fmt.setSwapInterval(1);
 	setViewport(new QGLWidget(fmt));
 
 	// Setup our scene (which is just the pixmap)
@@ -27,22 +30,12 @@ void ShrinkableQLabel::setHighQuality(bool high)
 {
 	mHighQuality = high;
 }
-//---------------------------------------------------
-void ShrinkableQLabel::paintEvent(QPaintEvent *aEvent)
-{
-	if (!mLastImagePainted)
-	{
-		QGraphicsView::paintEvent(aEvent);
-		_displayImage();
-		fitInView(0, 0, mScene->width(), mScene->height(), Qt::KeepAspectRatio);
-	}
-}
 //----------------------------------------------------
 void ShrinkableQLabel::setImage(const QImage& aPicture)
 {
 	mSource = aPicture;
-	mLastImagePainted = false;
-	repaint();
+	_displayImage();
+	fitInView(0, 0, mScene->width(), mScene->height(), Qt::KeepAspectRatio);
 }
 //----------------------------------------------------
 void ShrinkableQLabel::_displayImage()

@@ -12,7 +12,6 @@ class ShrinkableQLabel : public QGraphicsView
 public:
 	ShrinkableQLabel(QWidget* parent = 0);
 	~ShrinkableQLabel() {};
-	void paintEvent(QPaintEvent *aEvent);
 	void setImage(const QImage& aPicture);
 	void setHighQuality(bool high);
 	QSizeF getRenderSize();
@@ -26,7 +25,6 @@ protected:
 	QGraphicsScene* mScene;
 	QGraphicsPixmapItem* mPixmapItem;
 
-	bool mLastImagePainted;
 	QImage mSource;
 	bool mHighQuality;
 };

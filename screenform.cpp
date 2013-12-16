@@ -130,7 +130,7 @@ void ScreenForm::processPendingDatagrams()
 {
 	if (!isVisible() || !ui || mStopped)
 		return;
-
+    
 	int currentSocket = 0;
 	const int headerSize = 6;
 
@@ -232,7 +232,6 @@ void ScreenForm::onDecodeFinished(bool result, bool isAudio)
 			mLastImage = img;
 			mLastImageDisplayed = false;
 			ui->lblDisplay->setImage(mLastImage);
-			mLastImageDisplayed = true;
 
 			mTotalFrameReceived++;
 			
@@ -305,7 +304,7 @@ void ScreenForm::timerEvent(QTimerEvent *evt)
 				return;
 			}
 		}
-		else
+		else if (mTcpSocket.state() == QAbstractSocket::ConnectedState)
 		{
 			// Connected
 			mIsConnecting = false;
@@ -412,6 +411,8 @@ void ScreenForm::keyPressEvent(QKeyEvent *evt)
 #if defined(PLAT_WINDOWS) || defined(PLAT_LINUX)
 			sendKeyboardInput(true, evt->nativeScanCode());
 #elif defined(PLAT_APPLE)
+            char inputChar = evt->text().at(0).toLatin1();
+            qDebug() << "Input char is " << inputChar;
 			sendKeyboardInput(true, evt->key());
 #endif
 		}
@@ -444,6 +445,7 @@ void ScreenForm::keyPressEvent(QKeyEvent *evt)
 		}
 	}
 
+    evt->accept();
 }
 //----------------------------------------------------
 void ScreenForm::mousePressEvent(QMouseEvent *evt)
