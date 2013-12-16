@@ -128,7 +128,7 @@
       <OutputFile>$(OutDir)\$(ProjectName).exe</OutputFile>
       <AdditionalLibraryDirectories>$(QTDIR)\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <GenerateDebugInformation>false</GenerateDebugInformation>
-      <AdditionalDependencies>qtmain.lib;Qt5Core.lib;Qt5Gui.lib;Qt5Multimedia.lib;Qt5MultimediaWidgets.lib;Qt5Network.lib;Qt5Widgets.lib;ffmpeg_lib_win32/avcodec.lib;ffmpeg_lib_win32/avdevice.lib;ffmpeg_lib_win32/avutil.lib;ffmpeg_lib_win32/avformat.lib;ffmpeg_lib_win32/postproc.lib;ffmpeg_lib_win32/swscale.lib;Qt5OpenGL.lib;opengl32.lib;glu32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>qtmain.lib;Qt5Core.lib;Qt5Gui.lib;Qt5Multimedia.lib;Qt5MultimediaWidgets.lib;Qt5Network.lib;Qt5Widgets.lib;ffmpeg_lib_win32/avcodec.lib;ffmpeg_lib_win32/avdevice.lib;ffmpeg_lib_win32/avutil.lib;ffmpeg_lib_win32/avformat.lib;ffmpeg_lib_win32/postproc.lib;ffmpeg_lib_win32/swscale.lib;ffmpeg_lib_win32/swresample.lib;Qt5OpenGL.lib;opengl32.lib;glu32.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <ImageHasSafeExceptionHandlers>false</ImageHasSafeExceptionHandlers>
     </Link>
   </ItemDefinitionGroup>
@@ -354,7 +354,7 @@
   </ImportGroup>
   <ProjectExtensions>
     <VisualStudio>
-      <UserProperties UicDir=".\GeneratedFiles" MocDir=".\GeneratedFiles\$(ConfigurationName)" MocOptions="" RccDir=".\GeneratedFiles" lupdateOnBuild="0" lupdateOptions="" lreleaseOptions="" Qt5Version_x0020_Win32="5.2 win32" Qt5Version_x0020_x64="5.2 win64 OpenGL" />
+      <UserProperties UicDir=".\GeneratedFiles" MocDir=".\GeneratedFiles\$(ConfigurationName)" MocOptions="" RccDir=".\GeneratedFiles" lupdateOnBuild="0" lupdateOptions="" lreleaseOptions="" Qt5Version_x0020_Win32="5.0.1" Qt5Version_x0020_x64="5.2 win64 OpenGL" />
     </VisualStudio>
   </ProjectExtensions>
 </Project>

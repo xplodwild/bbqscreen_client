@@ -130,7 +130,7 @@ void ScreenForm::processPendingDatagrams()
 {
 	if (!isVisible() || !ui || mStopped)
 		return;
-    
+	
 	int currentSocket = 0;
 	const int headerSize = 6;
 
@@ -411,8 +411,8 @@ void ScreenForm::keyPressEvent(QKeyEvent *evt)
 #if defined(PLAT_WINDOWS) || defined(PLAT_LINUX)
 			sendKeyboardInput(true, evt->nativeScanCode());
 #elif defined(PLAT_APPLE)
-            char inputChar = evt->text().at(0).toLatin1();
-            qDebug() << "Input char is " << inputChar;
+			char inputChar = evt->text().at(0).toLatin1();
+			qDebug() << "Input char is " << inputChar;
 			sendKeyboardInput(true, evt->key());
 #endif
 		}
@@ -445,7 +445,7 @@ void ScreenForm::keyPressEvent(QKeyEvent *evt)
 		}
 	}
 
-    evt->accept();
+	evt->accept();
 }
 //----------------------------------------------------
 void ScreenForm::mousePressEvent(QMouseEvent *evt)
