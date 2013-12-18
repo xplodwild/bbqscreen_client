@@ -154,7 +154,7 @@ void ScreenForm::processPendingDatagrams()
 		while (mGlobalBytesBuffer.size() > 10)
 		{
 			// Read header
-			quint8 headerSize, protVersion, orientation;
+			quint8 headerSize, protVersion;
 			quint32 frameSize, audioFrameSize = 0;
 
 			protVersion = bytesToUInt8(mGlobalBytesBuffer, 0);
@@ -166,7 +166,7 @@ void ScreenForm::processPendingDatagrams()
 			else
 				qWarning() << "WARN: Unknown protVersion " << protVersion;
 
-			orientation = bytesToUInt8(mGlobalBytesBuffer, 1);
+			mRemoteOrientation = (int) bytesToUInt8(mGlobalBytesBuffer, 1);
 			frameSize = bytesToUInt32(mGlobalBytesBuffer, 2);
 
 			if (protVersion == 4)
@@ -217,7 +217,7 @@ void ScreenForm::onDecodeFinished(bool result, bool isAudio)
 		if (mLastImageDisplayed)
 		{
 			QImage img = mDecoder.getLastFrame();
-			//mRotationAngle = orientation * (-90) + mOrientationOffset;
+			mRotationAngle = mRemoteOrientation * (-90) + mOrientationOffset;
 
 			mOriginalSize.setX(img.width());
 			mOriginalSize.setY(img.height());

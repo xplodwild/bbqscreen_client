@@ -119,6 +119,7 @@ private:
 	bool mIsConnecting;
 	bool mShowFps;
 	bool mStopped;
+	int mRotationAngle;
 	QString mHost;
 
 	// Session data
@@ -130,7 +131,7 @@ private:
 
 	// Remote frame info
 	int mTotalFrameReceived;
-	int mRotationAngle;
+	int mRemoteOrientation;
 	int mOrientationOffset;
 	QPoint mOriginalSize;
 	QTime mFrameTimer;
