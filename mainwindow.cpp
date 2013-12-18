@@ -26,7 +26,7 @@
 #include <QtNetwork/QNetworkAccessManager>
 #include <QtNetwork/QNetworkReply>
 
-#define CLIENT_VERSION "2.2.1"
+#define CLIENT_VERSION "2.2.2"
 
 #if defined(PLAT_WINDOWS)
 #define ADB_PATH "prebuilts/adb.exe"
