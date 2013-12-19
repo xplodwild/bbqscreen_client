@@ -10,6 +10,9 @@ ShrinkableQLabel::ShrinkableQLabel(QWidget* parent /* = 0 */) : QGraphicsView(pa
 	mHighQuality(false)
 {
 	this->setFocusPolicy(Qt::FocusPolicy::NoFocus);
+	this->setFrameStyle(QFrame::NoFrame);
+	this->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+	this->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
 
 	// Setup OpenGL rendering context
 	QGLFormat fmt;
@@ -17,7 +20,12 @@ ShrinkableQLabel::ShrinkableQLabel(QWidget* parent /* = 0 */) : QGraphicsView(pa
 	fmt.setDoubleBuffer(true);
 	fmt.setDirectRendering(true);
 	fmt.setSwapInterval(1);
+	fmt.setStencil(false);
+	fmt.setRgba(false);
+	fmt.setDepth(false);
 	setViewport(new QGLWidget(fmt));
+	viewport()->setAttribute(Qt::WA_OpaquePaintEvent);
+	viewport()->setAttribute(Qt::WA_NoSystemBackground);
 
 	// Setup our scene (which is just the pixmap)
 	mScene = new QGraphicsScene(this);

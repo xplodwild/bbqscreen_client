@@ -196,7 +196,7 @@ void ScreenForm::processPendingDatagrams()
 				mGlobalBytesBuffer = mGlobalBytesBuffer.remove(0, frameSize);
 			}
 			
-			// If protocol version 4, device the audio frame (if any)
+			// If protocol version 4, decode the audio frame (if any)
 			if (audioFrameSize > 0)
 			{
 				unsigned char* buff = new unsigned char[audioFrameSize];
@@ -243,9 +243,18 @@ void ScreenForm::onDecodeFinished(bool result, bool isAudio)
 				return;
 
 			if (mShowFps)
+			{
 				ui->lblFps->setText(QString::number((double)(mTotalFrameReceived/(mFrameTimer.elapsed()/1000.0))) + " fps");
+
+				if (mFrameTimer.elapsed() > 2000) {
+					mFrameTimer.restart();
+					mTotalFrameReceived = 0;
+				}
+			}
 			else
+			{
 				ui->lblFps->setText("");
+			}
 		}
 	}
 
