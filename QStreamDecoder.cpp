@@ -86,9 +86,13 @@ void QStreamDecoder::initialize()
 	mCodecCtx = ffmpeg::avcodec_alloc_context3(mCodec);
 
 	if (mIsAudio)
+	{
 		mAudioFrame = ffmpeg::av_frame_alloc();
+	}
 	else
+	{
 		mPicture = ffmpeg::av_frame_alloc();
+	}
 
 	if (mCodec->capabilities & CODEC_CAP_TRUNCATED)
 		mCodecCtx->flags |= CODEC_FLAG_TRUNCATED;
@@ -151,6 +155,11 @@ void QStreamDecoder::initialize()
 		mAudioOutput = new QAudioOutput(format);
 		mAudioIO = mAudioOutput->start();
 		mAudioOutput->setVolume(1.0);
+	}
+	else
+	{
+		// Allocate an AVFrame structure
+		mPictureRGB = ffmpeg::avcodec_alloc_frame();
 	}
 }
 //------------------------------------------
@@ -290,20 +299,6 @@ bool QStreamDecoder::decodeVideoFrame(unsigned char* bytes, int size)
 		{
 			if (!mPictureRGB || mPictureRGB->width != mCodecCtx->width || mPictureRGB->height != mCodecCtx->height)
 			{
-				if (mPictureRGB)
-				{
-					qDebug() << "Realloc'ing picture RGB ; memleak!";
-					//avpicture_free((ffmpeg::AVPicture*)mPictureRGB);
-					mPictureRGB = nullptr;
-				}
-
-				// Allocate an AVFrame structure
-				mPictureRGB = ffmpeg::avcodec_alloc_frame();
-				if(!mPictureRGB)
-				{
-					return false;
-				}
-
 				// Determine required buffer size and allocate buffer
 				int numBytes = ffmpeg::avpicture_get_size(ffmpeg::PIX_FMT_RGB24, mCodecCtx->width, mCodecCtx->height);
 
