@@ -15,6 +15,7 @@ Compiling on Debian/Ubuntu:
  - Install QT5 (libqt5-dev, or from source from qt-project.org)
  - Install ffmpeg libraries: apt-get install libavcodec-dev libavformat-dev libavutil-dev libswscale-dev
  - Run: qmake BBQScreenClient2.linux.pro
+   - You may have to specify the QT version, e.g. `qmake -qt=qt5 BBQScreenClient2.linux.pro`
  - Run: make
  - The final binary will be built at ./Linux/BBQScreenClient2
 
