@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>627</width>
-    <height>432</height>
+    <width>624</width>
+    <height>617</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -25,7 +25,7 @@
       <item row="3" column="0">
        <widget class="QLabel" name="label">
         <property name="sizePolicy">
-         <sizepolicy hsizetype="Preferred" vsizetype="MinimumExpanding">
+         <sizepolicy hsizetype="Preferred" vsizetype="Maximum">
           <horstretch>0</horstretch>
           <verstretch>0</verstretch>
          </sizepolicy>
@@ -41,6 +41,37 @@
         </property>
         <property name="wordWrap">
          <bool>true</bool>
+        </property>
+       </widget>
+      </item>
+      <item row="0" column="0" colspan="2">
+       <widget class="QLabel" name="label_2">
+        <property name="font">
+         <font>
+          <pointsize>12</pointsize>
+          <weight>75</weight>
+          <bold>true</bold>
+         </font>
+        </property>
+        <property name="styleSheet">
+         <string notr="true">color:#33b5e5;
+font-weight:bold;</string>
+        </property>
+        <property name="text">
+         <string>BBQScreen</string>
+        </property>
+       </widget>
+      </item>
+      <item row="1" column="0" colspan="2">
+       <widget class="Line" name="line">
+        <property name="styleSheet">
+         <string notr="true">color:#33b5e5</string>
+        </property>
+        <property name="frameShadow">
+         <enum>QFrame::Plain</enum>
+        </property>
+        <property name="orientation">
+         <enum>Qt::Horizontal</enum>
         </property>
        </widget>
       </item>
@@ -94,7 +125,14 @@
           </widget>
          </item>
          <item row="0" column="0" colspan="3">
-          <widget class="QListWidget" name="listDevices"/>
+          <widget class="QListWidget" name="listDevices">
+           <property name="sizePolicy">
+            <sizepolicy hsizetype="Expanding" vsizetype="Preferred">
+             <horstretch>0</horstretch>
+             <verstretch>0</verstretch>
+            </sizepolicy>
+           </property>
+          </widget>
          </item>
          <item row="2" column="0" colspan="3">
           <widget class="QPushButton" name="btnConnect">
@@ -129,38 +167,14 @@
         </layout>
        </widget>
       </item>
-      <item row="0" column="0" colspan="2">
-       <widget class="QLabel" name="label_2">
-        <property name="font">
-         <font>
-          <pointsize>12</pointsize>
-          <weight>75</weight>
-          <bold>true</bold>
-         </font>
-        </property>
-        <property name="styleSheet">
-         <string notr="true">color:#33b5e5;
-font-weight:bold;</string>
-        </property>
-        <property name="text">
-         <string>BBQScreen</string>
-        </property>
-       </widget>
-      </item>
-      <item row="1" column="0" colspan="2">
-       <widget class="Line" name="line">
-        <property name="styleSheet">
-         <string notr="true">color:#33b5e5</string>
-        </property>
-        <property name="frameShadow">
-         <enum>QFrame::Plain</enum>
-        </property>
-        <property name="orientation">
-         <enum>Qt::Horizontal</enum>
-        </property>
-       </widget>
-      </item>
      </layout>
+    </widget>
+   </item>
+   <item row="3" column="0" colspan="2">
+    <widget class="Line" name="line_2">
+     <property name="orientation">
+      <enum>Qt::Horizontal</enum>
+     </property>
     </widget>
    </item>
    <item row="5" column="0" colspan="2">
@@ -209,42 +223,146 @@ font-weight:bold;</string>
         </property>
        </widget>
       </item>
-      <item row="3" column="0" colspan="2">
-       <widget class="QLabel" name="label_6">
-        <property name="text">
-         <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-style:italic;&quot;&gt;Go to our website for more information about USB method&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-        </property>
-       </widget>
-      </item>
-      <item row="2" column="3">
+      <item row="2" column="0">
        <widget class="QPushButton" name="btnWebsite">
         <property name="text">
          <string>Go to our website</string>
         </property>
        </widget>
       </item>
-      <item row="3" column="3">
+      <item row="2" column="3">
        <widget class="QLabel" name="lblClientVersion">
         <property name="text">
          <string>Client version 2.2.0</string>
         </property>
        </widget>
       </item>
-      <item row="2" column="0">
-       <widget class="QPushButton" name="btnBootstrapUSB">
+     </layout>
+    </widget>
+   </item>
+   <item row="4" column="0" colspan="2">
+    <widget class="QGroupBox" name="groupBox_3">
+     <property name="sizePolicy">
+      <sizepolicy hsizetype="Preferred" vsizetype="Expanding">
+       <horstretch>0</horstretch>
+       <verstretch>0</verstretch>
+      </sizepolicy>
+     </property>
+     <property name="title">
+      <string>Non-rooted device / USB method</string>
+     </property>
+     <layout class="QGridLayout" name="gridLayout_5">
+      <item row="4" column="0" colspan="4">
+       <widget class="QLabel" name="label_6">
+        <property name="sizePolicy">
+         <sizepolicy hsizetype="Preferred" vsizetype="Maximum">
+          <horstretch>0</horstretch>
+          <verstretch>0</verstretch>
+         </sizepolicy>
+        </property>
+        <property name="minimumSize">
+         <size>
+          <width>0</width>
+          <height>40</height>
+         </size>
+        </property>
         <property name="text">
-         <string>Bootstrap non-root USB method</string>
+         <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-style:italic;&quot;&gt;Go to our website for more information about USB method. Once setup, click &amp;quot;Start USB service&amp;quot;. If you want to forward the streaming through USB, click &amp;quot;Connect via USB&amp;quot;. Otherwise, make sure you are on the same Wi-Fi network. Quality settings only work on Android 4.3 and above.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+        </property>
+        <property name="wordWrap">
+         <bool>true</bool>
+        </property>
+       </widget>
+      </item>
+      <item row="1" column="0">
+       <widget class="QPushButton" name="btnBootstrapUSB">
+        <property name="sizePolicy">
+         <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
+          <horstretch>0</horstretch>
+          <verstretch>0</verstretch>
+         </sizepolicy>
+        </property>
+        <property name="text">
+         <string>Start USB service</string>
+        </property>
+       </widget>
+      </item>
+      <item row="2" column="3">
+       <widget class="QSpinBox" name="spinBitrate">
+        <property name="suffix">
+         <string>kbps</string>
+        </property>
+        <property name="prefix">
+         <string>Bitrate: </string>
+        </property>
+        <property name="minimum">
+         <number>500</number>
+        </property>
+        <property name="maximum">
+         <number>10000</number>
+        </property>
+        <property name="value">
+         <number>4500</number>
+        </property>
+       </widget>
+      </item>
+      <item row="2" column="0">
+       <widget class="QPushButton" name="btnConnectUSB">
+        <property name="enabled">
+         <bool>false</bool>
+        </property>
+        <property name="sizePolicy">
+         <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
+          <horstretch>0</horstretch>
+          <verstretch>0</verstretch>
+         </sizepolicy>
+        </property>
+        <property name="text">
+         <string>Connect via USB</string>
+        </property>
+       </widget>
+      </item>
+      <item row="2" column="1" colspan="2">
+       <widget class="QComboBox" name="cbQuality">
+        <property name="currentIndex">
+         <number>1</number>
+        </property>
+        <item>
+         <property name="text">
+          <string>1080p</string>
+         </property>
+        </item>
+        <item>
+         <property name="text">
+          <string>720p</string>
+         </property>
+        </item>
+        <item>
+         <property name="text">
+          <string>540p</string>
+         </property>
+        </item>
+        <item>
+         <property name="text">
+          <string>360p</string>
+         </property>
+        </item>
+       </widget>
+      </item>
+      <item row="1" column="1" colspan="3">
+       <widget class="QPushButton" name="btnDebugLog">
+        <property name="sizePolicy">
+         <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
+          <horstretch>0</horstretch>
+          <verstretch>0</verstretch>
+         </sizepolicy>
+        </property>
+        <property name="text">
+         <string>Show debug log (for support)</string>
         </property>
        </widget>
       </item>
      </layout>
-    </widget>
-   </item>
-   <item row="3" column="0" colspan="2">
-    <widget class="Line" name="line_2">
-     <property name="orientation">
-      <enum>Qt::Horizontal</enum>
-     </property>
     </widget>
    </item>
   </layout>

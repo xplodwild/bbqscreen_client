@@ -26,7 +26,7 @@
 #include <QtNetwork/QNetworkAccessManager>
 #include <QtNetwork/QNetworkReply>
 
-#define CLIENT_VERSION "2.2.2"
+#define CLIENT_VERSION "2.3.0"
 
 #if defined(PLAT_WINDOWS)
 #define ADB_PATH "prebuilts/adb.exe"
@@ -43,7 +43,8 @@
 //----------------------------------------------------
 MainWindow::MainWindow(QWidget *parent) :
 	QDialog(parent),
-	ui(new Ui::MainWindow), mADBProcess(NULL)
+	ui(new Ui::MainWindow), mADBProcess(NULL), mDebugWidget(nullptr), mServiceShouldRun(false),
+	mCrashCount(0)
 {
 	ui->setupUi(this);
 
@@ -56,8 +57,12 @@ MainWindow::MainWindow(QWidget *parent) :
 	connect(ui->listDevices, SIGNAL(itemClicked(QListWidgetItem*)), this, SLOT(onSelectDevice(QListWidgetItem*)));
 	connect(ui->listDevices, SIGNAL(itemDoubleClicked(QListWidgetItem*)), this, SLOT(onDoubleClickDevice(QListWidgetItem*)));
 	connect(ui->btnBootstrapUSB, SIGNAL(clicked()), this, SLOT(onClickBootstrapUSB()));
+	connect(ui->btnConnectUSB, SIGNAL(clicked()), this, SLOT(onClickConnectUSB()));
 	connect(ui->btnConnect, SIGNAL(clicked()), this, SLOT(onClickConnect()));
 	connect(ui->btnWebsite, SIGNAL(clicked()), this, SLOT(onClickWebsite()));
+	connect(ui->btnDebugLog, SIGNAL(clicked()), this, SLOT(onClickShowDebugLog()));
+	connect(ui->cbQuality, SIGNAL(currentIndexChanged(int)), this, SLOT(onQualityChanged(int)));
+	connect(ui->spinBitrate, SIGNAL(valueChanged(int)), this, SLOT(onBitrateChanged(int)));
 
 	// Check if we have an update available
 	QNetworkAccessManager* netAM = new QNetworkAccessManager(this);
@@ -82,7 +87,8 @@ void MainWindow::closeEvent(QCloseEvent* evt)
 	Q_UNUSED(evt);
 	if (mADBProcess)
 	{
-		mADBProcess->kill();
+		disconnect(mADBProcess, SIGNAL(finished(int, QProcess::ExitStatus)), this, SLOT(onADBProcessFinishes()));
+		mADBProcess->terminate();
 		delete mADBProcess;
 	}
 }
@@ -101,6 +107,28 @@ void MainWindow::timerEvent(QTimerEvent* evt)
 			it = mDevices.erase(it);
 			break;
 		}
+	}
+}
+//----------------------------------------------------
+void MainWindow::onQualityChanged(int index)
+{
+	if (mADBProcess)
+	{
+		mCrashCount = 0;
+		// Restart the app
+		mADBProcess->terminate();
+		mADBProcess->kill();
+	}
+}
+//----------------------------------------------------
+void MainWindow::onBitrateChanged(int value)
+{
+	if (mADBProcess)
+	{
+		mCrashCount = 0;
+		// Restart the app
+		mADBProcess->terminate();
+		mADBProcess->kill();
 	}
 }
 //----------------------------------------------------
@@ -204,32 +232,128 @@ void MainWindow::onClickWebsite()
 	QDesktopServices::openUrl(QUrl("http://screen.bbqdroid.org/"));
 }
 //----------------------------------------------------
+void MainWindow::onClickShowDebugLog()
+{
+	if (mDebugWidget != nullptr) {
+		delete mDebugWidget;
+	}
+	mDebugWidget = new QListWidget();
+	mDebugWidget->addItems(mADBLog);
+
+	for (auto it = mADBErrorLog.begin(); it != mADBErrorLog.end(); ++it) {
+		QListWidgetItem* item = new QListWidgetItem(*it);
+		item->setTextColor(QColor(255, 0, 0));
+		mDebugWidget->addItem(item);
+	}
+
+	mDebugWidget->show();
+}
+//----------------------------------------------------
+QProcess* MainWindow::runAdb(const QStringList& params)
+{
+	QProcess* process = new QProcess(this);
+#ifndef PLAT_APPLE
+	process->start(ADB_PATH, params);
+#else
+	process->start(QDir(QCoreApplication::applicationDirPath()).absolutePath() + "/" + ADB_PATH, params);
+#endif	
+
+	return process;
+}
+//----------------------------------------------------
 void MainWindow::onClickBootstrapUSB()
 {
-	if (!mADBProcess)
+	if (!mServiceShouldRun)
 	{
-		mADBProcess = new QProcess(this);
-		connect(mADBProcess, SIGNAL(finished(int, QProcess::ExitStatus)), this, SLOT(onADBProcessFinishes()));
+		mCrashCount = 0;
+		mServiceShouldRun = true;
+		startUsbService();
 	}
-	
+	else
+	{
+		mServiceShouldRun = false;
+		if (mADBProcess) 
+		{
+			mADBProcess->terminate();
+			mADBProcess->kill();
+		}
+	}
+}
+//----------------------------------------------------
+void MainWindow::onClickConnectUSB()
+{
+	// Forward TCP port to localhost and connect to it
 	QStringList args;
-	args << "shell";
-	args << "/data/data/org.bbqdroid.bbqscreen/files/bbqscreen";
-	args << "-s";
-	args << "50";
-	args << "-720";
+	args << "forward";
+	args << "tcp:9876";
+	args << "tcp:9876";
 
-#ifndef PLAT_APPLE
-	mADBProcess->start(ADB_PATH, args);
-#else
-	mADBProcess->start(QDir(QCoreApplication::applicationDirPath()).absolutePath() + "/" + ADB_PATH, args);
-#endif
+	runAdb(args);
+
+	ui->ebIP->setText("127.0.0.1");
+	onClickConnect();
 }
 //----------------------------------------------------
 void MainWindow::onADBProcessFinishes()
 {
-	// If the process crashed, reboot it
-	onClickBootstrapUSB();
+	if (mServiceShouldRun)
+	{
+		mCrashCount++;
+
+		if (mCrashCount > 20) 
+		{
+			QMessageBox::critical(this, "Crash!", "It appears that the streaming process has crashed over 20 times. Please check the debug log window and send a screenshot to the support.");
+			mServiceShouldRun = false;
+		}
+		// If the process crashed, reboot it
+		startUsbService();
+	}
+	else
+	{
+		// Normal stop
+		ui->btnBootstrapUSB->setText("Start USB service");
+		ui->btnConnectUSB->setEnabled(false);
+	}
+}
+//----------------------------------------------------
+void MainWindow::onADBProcessReadyRead()
+{
+	QByteArray stdOut = mADBProcess->readAllStandardOutput();
+	QString stdOutLine = QString(stdOut).trimmed();
+
+	if (!stdOutLine.isEmpty())
+	{
+		mADBLog.push_back(stdOutLine);
+
+		if (mDebugWidget != nullptr)
+		{
+			mDebugWidget->addItem(stdOutLine);
+		}
+	}
+}
+//----------------------------------------------------
+void MainWindow::onADBErrorReadyRead()
+{
+	QByteArray stdErr = mADBProcess->readAllStandardError();
+	QString stdErrLine = QString(stdErr).trimmed();
+
+	if (stdErrLine.contains("device not found"))
+	{
+		mServiceShouldRun = false;
+		QMessageBox::critical(this, "Device not found or unplugged", "Cannot find an Android device connected via ADB. Make sure USB Debugging is enabled on your device, and that the ADB drivers are installed. Follow the guide on our website for more information.");
+	}
+
+	if (!stdErrLine.isEmpty())
+	{
+		mADBErrorLog.push_back(stdErrLine);
+
+		if (mDebugWidget != nullptr)
+		{
+			QListWidgetItem* item = new QListWidgetItem(stdErrLine);
+			item->setTextColor(QColor(255, 0, 0));
+			mDebugWidget->addItem(item);
+		}
+	}
 }
 //----------------------------------------------------
 void MainWindow::onUpdateChecked()
@@ -245,5 +369,71 @@ void MainWindow::onUpdateChecked()
 			QDesktopServices::openUrl(QUrl("http://screen.bbqdroid.org/"));
 		}
 	}
+}
+//----------------------------------------------------
+void MainWindow::startUsbService()
+{
+	ui->btnBootstrapUSB->setEnabled(false);
+	ui->btnBootstrapUSB->setText("Starting...");
+	qApp->processEvents();
+
+	if (!mADBProcess)
+	{
+		mADBProcess = new QProcess(this);
+		connect(mADBProcess, SIGNAL(finished(int, QProcess::ExitStatus)), this, SLOT(onADBProcessFinishes()));
+		connect(mADBProcess, SIGNAL(readyReadStandardOutput()), this, SLOT(onADBProcessReadyRead()));
+		connect(mADBProcess, SIGNAL(readyReadStandardError()), this, SLOT(onADBErrorReadyRead()));
+	}
+
+	// Copy binary to workaround some security restrictions on Lollipop and Knox
+	QStringList args;
+	args << "shell";
+	args << "cp";
+	args << "/data/data/org.bbqdroid.bbqscreen/files/bbqscreen";
+	args << "/data/local/tmp/bbqscreen";
+	QProcess* copyProc = runAdb(args);
+	delete copyProc;
+
+	args.clear();
+	args << "shell";
+	args << "chmod";
+	args << "755";
+	args << "/data/local/tmp/bbqscreen";
+	copyProc = runAdb(args);
+	delete copyProc;
+
+	args.clear();
+	args << "shell";
+	args << "/data/local/tmp/bbqscreen";
+	args << "-s";
+	args << "50";
+	switch (ui->cbQuality->currentIndex())
+	{
+	case 0:
+		args << "-1080";
+		break;
+	case 1:
+		args << "-720";
+		break;
+	case 2:
+		args << "-540";
+		break;
+	case 3:
+		args << "-360";
+		break;
+	}
+	args << "-q";
+	args << QString::number(ui->spinBitrate->value());
+	args << "-i";
+
+#ifndef PLAT_APPLE
+	mADBProcess->start(ADB_PATH, args);
+#else
+	mADBProcess->start(QDir(QCoreApplication::applicationDirPath()).absolutePath() + "/" + ADB_PATH, args);
+#endif
+
+	ui->btnConnectUSB->setEnabled(true);
+	ui->btnBootstrapUSB->setEnabled(true);
+	ui->btnBootstrapUSB->setText("Stop USB service");
 }
 //----------------------------------------------------

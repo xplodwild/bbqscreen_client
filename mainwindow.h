@@ -50,15 +50,25 @@ public:
 	void closeEvent(QCloseEvent* evt);
 	void timerEvent(QTimerEvent* evt);
 
+	QProcess* runAdb(const QStringList& params);
+
+	void startUsbService();
+
 private slots:
 	void onClickConnect();
 	void onClickWebsite();
+	void onClickShowDebugLog();
 	void onDiscoveryReadyRead();
 	void onSelectDevice(QListWidgetItem* item);
 	void onClickBootstrapUSB();
+	void onClickConnectUSB();
 	void onADBProcessFinishes();
+	void onADBProcessReadyRead();
+	void onADBErrorReadyRead();
 	void onDoubleClickDevice(QListWidgetItem* item);
 	void onUpdateChecked();
+	void onQualityChanged(int index);
+	void onBitrateChanged(int value);
 
 private:
 	Ui::MainWindow *ui;
@@ -69,6 +79,11 @@ private:
 	QList<Device*> mDevices;
 
 	QProcess* mADBProcess;
+	QStringList mADBLog;
+	QStringList mADBErrorLog;
+	QListWidget* mDebugWidget;
+	bool mServiceShouldRun;
+	int mCrashCount;
 
 };
 
