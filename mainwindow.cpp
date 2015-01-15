@@ -252,6 +252,10 @@ void MainWindow::onClickShowDebugLog()
 QProcess* MainWindow::runAdb(const QStringList& params)
 {
 	QProcess* process = new QProcess(this);
+	
+	connect(process, SIGNAL(readyReadStandardOutput()), this, SLOT(onADBProcessReadyRead()));
+	connect(process, SIGNAL(readyReadStandardError()), this, SLOT(onADBErrorReadyRead()));
+
 #ifndef PLAT_APPLE
 	process->start(ADB_PATH, params);
 #else
@@ -318,8 +322,21 @@ void MainWindow::onADBProcessFinishes()
 //----------------------------------------------------
 void MainWindow::onADBProcessReadyRead()
 {
-	QByteArray stdOut = mADBProcess->readAllStandardOutput();
+	QProcess* process = (QProcess*) QObject::sender();
+
+	QByteArray stdOut = process->readAllStandardOutput();
 	QString stdOutLine = QString(stdOut).trimmed();
+	
+	if (stdOutLine.contains("/data/data") &&  stdOutLine.contains("No such file or directory"))
+	{
+		mServiceShouldRun = false;
+		mServiceStartError = true;
+	}
+	else if (stdOutLine.contains("Unable to chmod"))
+	{
+		mServiceShouldRun = false;
+		mServiceStartError = true;
+	}
 
 	if (!stdOutLine.isEmpty())
 	{
@@ -334,13 +351,25 @@ void MainWindow::onADBProcessReadyRead()
 //----------------------------------------------------
 void MainWindow::onADBErrorReadyRead()
 {
-	QByteArray stdErr = mADBProcess->readAllStandardError();
+	QProcess* process = (QProcess*) QObject::sender();
+
+	QByteArray stdErr = process->readAllStandardError();
 	QString stdErrLine = QString(stdErr).trimmed();
 
 	if (stdErrLine.contains("device not found"))
 	{
 		mServiceShouldRun = false;
 		QMessageBox::critical(this, "Device not found or unplugged", "Cannot find an Android device connected via ADB. Make sure USB Debugging is enabled on your device, and that the ADB drivers are installed. Follow the guide on our website for more information.");
+	}
+	else if (stdErrLine.contains("device offline")) 
+	{
+		mServiceShouldRun = false;
+		QMessageBox::critical(this, "Device offline", "An Android device is connected but reports as offline. Check your device for any additional information, or try to unplug and replug your device");
+	}
+	else if (stdErrLine.contains("unauthorized"))
+	{
+		mServiceShouldRun = false;
+		QMessageBox::critical(this, "Device unauthorized", "An Android device is connected but reports as unauthorized. Please check the confirmation dialog on your device.");
 	}
 
 	if (!stdErrLine.isEmpty())
@@ -373,6 +402,8 @@ void MainWindow::onUpdateChecked()
 //----------------------------------------------------
 void MainWindow::startUsbService()
 {
+	mServiceStartError = false;
+
 	ui->btnBootstrapUSB->setEnabled(false);
 	ui->btnBootstrapUSB->setText("Starting...");
 	qApp->processEvents();
@@ -392,15 +423,29 @@ void MainWindow::startUsbService()
 	args << "/data/data/org.bbqdroid.bbqscreen/files/bbqscreen";
 	args << "/data/local/tmp/bbqscreen";
 	QProcess* copyProc = runAdb(args);
-	delete copyProc;
+	copyProc->waitForFinished();
+
+	if (mServiceStartError) 
+	{
+		QMessageBox::critical(this, "Unable to prepare the USB service", "Unable to copy the BBQScreen service to an executable zone on your device, as it hasn't been found. Please make sure the BBQScreen app is installed, and that you opened it once, and pressed 'USB' if prompted or turned it on once.");
+		delete copyProc;
+		return;
+	}
 
 	args.clear();
 	args << "shell";
 	args << "chmod";
 	args << "755";
 	args << "/data/local/tmp/bbqscreen";
-	copyProc = runAdb(args);
-	delete copyProc;
+	QProcess* chmodProc = runAdb(args);
+	chmodProc->waitForFinished();
+
+	if (mServiceStartError) 
+	{
+		QMessageBox::critical(this, "Unable to prepare the USB service", "Unable to set the permissions of the BBQScreen service to executable. Please contact support.");
+		delete chmodProc;
+		return;
+	}
 
 	args.clear();
 	args << "shell";
@@ -435,5 +480,8 @@ void MainWindow::startUsbService()
 	ui->btnConnectUSB->setEnabled(true);
 	ui->btnBootstrapUSB->setEnabled(true);
 	ui->btnBootstrapUSB->setText("Stop USB service");
+
+	delete chmodProc;
+	delete copyProc;
 }
 //----------------------------------------------------

@@ -84,6 +84,7 @@ private:
 	QListWidget* mDebugWidget;
 	bool mServiceShouldRun;
 	int mCrashCount;
+	bool mServiceStartError;
 
 };
 
